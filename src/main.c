@@ -1,43 +1,23 @@
 #include <stdbool.h>
-#include <stdio.h>
 
 #include <SDL2/SDL.h>
 
-bool isRunning         = false;
-SDL_Window* window     = NULL;
-SDL_Renderer* renderer = NULL;
+#include "display.h"
 
-bool initializeWindow(void) {
-    if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
-        fprintf(stderr, "Error initializing SDL.\n");
-        return false;
-    }
-    // Create a SDL Window
-    window = SDL_CreateWindow(
-        NULL,
-        SDL_WINDOWPOS_CENTERED,
-        SDL_WINDOWPOS_CENTERED,
-        1280,
-        720,
-        SDL_WINDOW_RESIZABLE
-    );
-    if (!window) {
-        fprintf(stderr, "Error creating SDL window.\n");
-        return false;
-    }
-
-    // Create a SDL renderer
-    renderer = SDL_CreateRenderer(window, -1, 0);
-    if (!renderer) {
-        fprintf(stderr, "Error creating SDL renderer.\n");
-        return false;
-    }
-
-    return true;
-}
+bool isRunning = false;
 
 void setup(void) {
-    // TODO:
+    // Allocate the required memory in bytes to hold the color buffer
+    colorBuffer = (uint32_t *)malloc(sizeof(uint32_t) * windowWidth * windowHeight);
+
+    // Creating a SDL texture that is used to display the color buffer
+    colorBufferTexture = SDL_CreateTexture(
+        renderer,
+        SDL_PIXELFORMAT_ARGB8888,
+        SDL_TEXTUREACCESS_STREAMING,
+        windowWidth,
+        windowHeight
+    );
 }
 
 void processInput(void) {
@@ -60,10 +40,16 @@ void update(void) {
 }
 
 void render(void) {
-    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
 
-    //...
+    drawGrid();
+
+    drawPixel(100, 100, 0xFFFF00FF);
+    drawRect(300, 200, 300, 150, 0xFFFF00FF);
+
+    renderColorBuffer();
+    clearColorBuffer(0xFF000000);
 
     SDL_RenderPresent(renderer);
 }
@@ -73,12 +59,13 @@ int main(void) {
 
     setup();
 
-    // ReSharper disable once CppDFALoopConditionNotUpdated
     while (isRunning) {
         processInput();
         update();
         render();
     }
+
+    destroyWindow();
 
     return 0;
 }
