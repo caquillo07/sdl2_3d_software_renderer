@@ -56,14 +56,43 @@ void drawRect(const int x, const int y, const int width, const int height, const
         for (int j = 0; j < height; j++) {
             const int currentX = x + i;
             const int currentY = y + j;
-
             drawPixel(currentX, currentY, color);
         }
     }
 }
 
 void drawPixel(const int x, const int y, const uint32_t color) {
-    colorBuffer[(windowWidth * y) + x] = color;
+    if (x >= 0 && x < windowWidth && y < windowHeight && y >= 0) {
+        colorBuffer[(windowWidth * y) + x] = color;
+    }
+}
+
+void drawLine(const int x0, const int y0, const int x1, const int y1, const uint32_t color) {
+    const int deltaX = x1 - x0;
+    const int deltaY = y1 - y0;
+
+    const int sideLength   = abs(deltaX) >= abs(deltaY) ? abs(deltaX) : abs(deltaY);
+    const float xIncrement = deltaX / (float)sideLength;
+    const float yIncrement = deltaY / (float)sideLength;
+
+    float currentX = x0;
+    float currentY = y0;
+
+    for (int i = 0; i <= sideLength; i++) {
+        drawPixel(round(currentX), round(currentY), color);
+        currentX += xIncrement;
+        currentY += yIncrement;
+    }
+}
+
+void drawLinePoint(const vec2 point0, const vec2 point1, const uint32_t color) {
+    drawLine(point0.x, point0.y, point1.x, point1.y, color);
+}
+
+void drawTriangle(const vec2 pointA, const vec2 pointB, const vec2 pointC, const uint32_t color) {
+    drawLinePoint(pointA, pointB, color);
+    drawLinePoint(pointB, pointC, color);
+    drawLinePoint(pointC, pointA, color);
 }
 
 void renderColorBuffer(void) {
