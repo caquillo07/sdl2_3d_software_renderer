@@ -8,9 +8,9 @@
 #include "vector.h"
 
 typedef struct {
-    vec3 position;
-    vec3 rotation;
+    Vec3 position;
+    Vec3 rotation;
     float fovAngle;
-} camera;
+} Camera;
 
 #endif //CAMERA_H

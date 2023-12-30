@@ -9,10 +9,10 @@
 
 typedef struct {
     int a, b, c;
-} face;
+} Face;
 
 typedef struct {
-    vec2 points[3];
-} triangle;
+    Vec2 points[3];
+} Triangle;
 
 #endif //TRIANGLE_H

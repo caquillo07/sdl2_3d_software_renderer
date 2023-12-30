@@ -1,10 +1,12 @@
 #include "mesh.h"
 
+#include <stddef.h>
+#include <stdlib.h>
+
+#include "array.h"
 #include "vector.h"
 
-#define N_MESH_VERTICES 8
-#define N_MESH_FACES 6 * 2 // 6 cube faces, 2 triangles per face
-vec3 meshVertices[N_MESH_VERTICES] = {
+Vec3 cubeVertices[N_CUBE_VERTICES] = {
     {.x = -1, .y = -1, .z = -1}, // 1
     {.x = -1, .y = 1, .z = -1},  // 2
     {.x = 1, .y = 1, .z = -1},   // 3
@@ -15,7 +17,7 @@ vec3 meshVertices[N_MESH_VERTICES] = {
     {.x = -1, .y = -1, .z = 1}   // 8
 };
 
-face meshFaces[N_MESH_FACES] = {
+Face cubeFaces[N_CUBE_FACES] = {
     // front
     {.a = 1, .b = 2, .c = 3},
     {.a = 1, .b = 3, .c = 4},
@@ -35,3 +37,27 @@ face meshFaces[N_MESH_FACES] = {
     {.a = 6, .b = 8, .c = 1},
     {.a = 6, .b = 1, .c = 4}
 };
+
+Mesh mesh = {
+    .vertices = NULL,
+    .faces = NULL,
+    .rotation = {.x = 0, .y = 0, .z = 0},
+};
+
+void loadCubeMeshData(void) {
+    for (int i = 0; i < N_CUBE_VERTICES; i++) {
+        array_push(mesh.vertices, cubeVertices[i]);
+    }
+    for (int i = 0; i < N_CUBE_FACES; i++) {
+        array_push(mesh.faces, cubeFaces[i]);
+    }
+
+    mesh.rotation.x = 0;
+    mesh.rotation.y = 0;
+    mesh.rotation.z = 0;
+}
+
+void freeMesh(void) {
+    array_free(mesh.faces);
+    array_free(mesh.vertices);
+}

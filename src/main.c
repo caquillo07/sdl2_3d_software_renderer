@@ -1,18 +1,19 @@
 #include <stdbool.h>
 #include <SDL2/SDL.h>
 
-#include "camera.h"
+#include "array.h"
 #include "display.h"
 #include "mesh.h"
 #include "vector.h"
 
-triangle trianglesToRender[N_MESH_FACES];
-vec3 cameraPosition = {
+#define nil NULL;
+
+Triangle* trianglesToRender = nil;
+Vec3 cameraPosition         = {
     .x = 0,
     .y = 0,
     .z = -5
 };
-vec3 cubeRotation     = {};
 float fovFactor       = 640;
 int previousFrameTime = 0;
 
@@ -30,6 +31,8 @@ void setup(void) {
         windowWidth,
         windowHeight
     );
+
+    loadCubeMeshData();
 }
 
 void processInput(void) {
@@ -41,15 +44,18 @@ void processInput(void) {
             isRunning = false;
             break;
         case SDL_KEYDOWN:
-            if (event.key.keysym.sym == SDLK_ESCAPE)
+            if (event.key.keysym.sym == SDLK_ESCAPE) {
                 isRunning = false;
+            }
+            break;
+        default:
             break;
     }
 }
 
 // simple naive orthographic projection
-vec2 project(const vec3 point) {
-    return (vec2){
+Vec2 project(const Vec3 point) {
+    return (Vec2){
         .x = point.x * fovFactor / point.z,
         .y = point.y * fovFactor / point.z,
     };
@@ -63,28 +69,31 @@ void update(void) {
     }
     previousFrameTime = SDL_GetTicks();
 
-    const float rotation = 0.005;
-    cubeRotation.y += rotation;
-    cubeRotation.z += rotation;
-    cubeRotation.x += rotation;
+    // each update init the triangles to render, todo(hector) - dont do this
+    trianglesToRender = nil;
 
-    for (int i = 0; i < N_MESH_FACES; i++) {
-        const face meshFace       = meshFaces[i];
-        const vec3 faceVertices[] = {
-            meshVertices[meshFace.a - 1],
-            meshVertices[meshFace.b - 1],
-            meshVertices[meshFace.c - 1],
+    const float rotation = 0.005;
+    mesh.rotation.y += rotation;
+    mesh.rotation.z += rotation;
+    mesh.rotation.x += rotation;
+
+    for (int i = 0; i < array_length(mesh.faces); i++) {
+        const Face meshFace       = mesh.faces[i];
+        const Vec3 faceVertices[] = {
+            mesh.vertices[meshFace.a - 1],
+            mesh.vertices[meshFace.b - 1],
+            mesh.vertices[meshFace.c - 1],
         };
 
-        triangle projectedTriangle;
+        Triangle projectedTriangle;
         for (int j = 0; j < 3; j++) {
-            vec3 transformedVertex = vec3_rotate_y(faceVertices[j], cubeRotation.y);
-            transformedVertex      = vec3_rotate_x(transformedVertex, cubeRotation.x);
-            transformedVertex      = vec3_rotate_z(transformedVertex, cubeRotation.z);
+            Vec3 transformedVertex = vec3_rotate_y(faceVertices[j], mesh.rotation.y);
+            transformedVertex      = vec3_rotate_x(transformedVertex, mesh.rotation.x);
+            transformedVertex      = vec3_rotate_z(transformedVertex, mesh.rotation.z);
 
             // trnaslate vertex away from camera
             transformedVertex.z -= cameraPosition.z;
-            vec2 projectedVertex = project(transformedVertex);
+            Vec2 projectedVertex = project(transformedVertex);
 
             // scale and translate the projected points to the middle of the screen
             projectedVertex.x += (windowWidth / 2);
@@ -92,7 +101,8 @@ void update(void) {
             projectedTriangle.points[j] = projectedVertex;
         }
 
-        trianglesToRender[i] = projectedTriangle;
+        // trianglesToRender[i] = projectedTriangle;
+        array_push(trianglesToRender, projectedTriangle);
     }
 }
 
@@ -104,8 +114,9 @@ void render(void) {
     drawLine(400, 600, 100, 300, 0xFF00FFFF);
 
     // render the projected triangles
-    for (int i = 0; i < N_MESH_FACES; i++) {
-        const triangle t = trianglesToRender[i];
+    const int numOfTriangles = array_length(trianglesToRender);
+    for (int i = 0; i < numOfTriangles; i++) {
+        const Triangle t = trianglesToRender[i];
         uint32_t color;
         if (i % 2 == 0) {
             color = 0xFF0000FF;
@@ -120,10 +131,17 @@ void render(void) {
         drawTriangle(t.points[0], t.points[1], t.points[2], color);
     }
 
+    // clear triangles - todo dont do this
+    array_free(trianglesToRender);
     renderColorBuffer();
     clearColorBuffer(0xFF000000);
 
     SDL_RenderPresent(renderer);
+}
+
+void freeResources(void) {
+    freeMesh();
+    free(colorBuffer);
 }
 
 int main(void) {
@@ -139,6 +157,7 @@ int main(void) {
     }
 
     destroyWindow();
+    freeResources();
 
     return EXIT_SUCCESS;
 }

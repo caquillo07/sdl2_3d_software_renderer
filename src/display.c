@@ -85,11 +85,11 @@ void drawLine(const int x0, const int y0, const int x1, const int y1, const uint
     }
 }
 
-void drawLinePoint(const vec2 point0, const vec2 point1, const uint32_t color) {
+void drawLinePoint(const Vec2 point0, const Vec2 point1, const uint32_t color) {
     drawLine(point0.x, point0.y, point1.x, point1.y, color);
 }
 
-void drawTriangle(const vec2 pointA, const vec2 pointB, const vec2 pointC, const uint32_t color) {
+void drawTriangle(const Vec2 pointA, const Vec2 pointB, const Vec2 pointC, const uint32_t color) {
     drawLinePoint(pointA, pointB, color);
     drawLinePoint(pointB, pointC, color);
     drawLinePoint(pointC, pointA, color);
@@ -114,7 +114,6 @@ void clearColorBuffer(const uint32_t color) {
 }
 
 void destroyWindow(void) {
-    free(colorBuffer);
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();
