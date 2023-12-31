@@ -23,7 +23,7 @@ void setup(void) {
     // Allocate the required memory in bytes to hold the color buffer
     colorBuffer = (uint32_t *)malloc(sizeof(uint32_t) * windowWidth * windowHeight);
 
-    // Creating a SDL texture that is used to display the color buffer
+    // // Creating a SDL texture that is used to display the color buffer
     colorBufferTexture = SDL_CreateTexture(
         renderer,
         SDL_PIXELFORMAT_ARGB8888,
@@ -32,7 +32,8 @@ void setup(void) {
         windowHeight
     );
 
-    loadCubeMeshData();
+    // loadCubeMeshData();
+    loadOBJFileData("../assets/f22.obj");
 }
 
 void processInput(void) {

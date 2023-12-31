@@ -23,6 +23,7 @@ typedef struct {
 extern Mesh mesh;
 
 void loadCubeMeshData(void);
+void loadOBJFileData(const char* fileName);
 void freeMesh(void);
 
 #endif //MESH_H
