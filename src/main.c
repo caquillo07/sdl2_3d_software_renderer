@@ -54,7 +54,7 @@ void processInput(void) {
     }
 }
 
-// simple naive orthographic projection
+// simple naive perspective projection
 Vec2 project(const Vec3 point) {
     return (Vec2){
         .x = point.x * fovFactor / point.z,
@@ -74,9 +74,9 @@ void update(void) {
     trianglesToRender = nil;
 
     const float rotation = 0.005;
-    mesh.rotation.y += rotation;
-    mesh.rotation.z += rotation;
     mesh.rotation.x += rotation;
+    // mesh.rotation.y += rotation;
+    // mesh.rotation.z += rotation;
 
     for (int i = 0; i < array_length(mesh.faces); i++) {
         const Face meshFace       = mesh.faces[i];
@@ -110,25 +110,17 @@ void update(void) {
 void render(void) {
     drawGrid();
 
-    drawLine(100, 300, 300, 30, 0xFF00FFFF);
-    drawLine(300, 30, 400, 600, 0xFF00FFFF);
-    drawLine(400, 600, 100, 300, 0xFF00FFFF);
-
     // render the projected triangles
     const int numOfTriangles = array_length(trianglesToRender);
     for (int i = 0; i < numOfTriangles; i++) {
         const Triangle t = trianglesToRender[i];
-        uint32_t color;
-        if (i % 2 == 0) {
-            color = 0xFF0000FF;
-        } else {
-            color = 0xFF00FF00;
-        }
+        const uint32_t color = 0xFF00FF00;
         // const uint32_t color = 0xFFFFFFFF;
-        drawRect(t.points[0].x, t.points[0].y, 3, 3, 0xFFFFFFFF);
-        drawRect(t.points[1].x, t.points[1].y, 3, 3, 0xFFFFFFFF);
-        drawRect(t.points[2].x, t.points[2].y, 3, 3, 0xFFFFFFFF);
-        // drawPixel(projectedPoint.x, projectedPoint.y, 0xFFFF00FF);
+        // drawing the vertex points
+        // drawRect(t.points[0].x, t.points[0].y, 3, 3, 0xFFFFFFFF);
+        // drawRect(t.points[1].x, t.points[1].y, 3, 3, 0xFFFFFFFF);
+        // drawRect(t.points[2].x, t.points[2].y, 3, 3, 0xFFFFFFFF);
+        // drawing the actual triangle
         drawTriangle(t.points[0], t.points[1], t.points[2], color);
     }
 
