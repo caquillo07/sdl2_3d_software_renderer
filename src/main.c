@@ -88,9 +88,9 @@ void update(void) {
 
         Triangle projectedTriangle;
         for (int j = 0; j < 3; j++) {
-            Vec3 transformedVertex = vec3_rotate_y(faceVertices[j], mesh.rotation.y);
-            transformedVertex      = vec3_rotate_x(transformedVertex, mesh.rotation.x);
-            transformedVertex      = vec3_rotate_z(transformedVertex, mesh.rotation.z);
+            Vec3 transformedVertex = vec3_rotateY(faceVertices[j], mesh.rotation.y);
+            transformedVertex      = vec3_rotateX(transformedVertex, mesh.rotation.x);
+            transformedVertex      = vec3_rotateY(transformedVertex, mesh.rotation.z);
 
             // trnaslate vertex away from camera
             transformedVertex.z -= cameraPosition.z;
