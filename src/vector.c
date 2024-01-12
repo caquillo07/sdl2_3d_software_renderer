@@ -34,6 +34,12 @@ Vec2 vec2_div(const Vec2 v1, const float factor) {
     };
 }
 
+void vec2_normalize(Vec2* v) {
+    const float length = sqrt(v->x * v->x + v->y * v->y);
+    v->x /= length;
+    v->y /= length;
+}
+
 float vec2_dot(const Vec2 v1, const Vec2 v2) {
     return v1.x * v2.x + v1.y * v2.y;
 }
@@ -81,6 +87,13 @@ Vec3 vec3_cross(const Vec3 v1, const Vec3 v2) {
         .y = v1.z * v2.x - v1.x * v2.z,
         .z = v1.x * v2.y - v1.y * v2.x,
     };
+}
+
+void vec3_normalize(Vec3* v) {
+    const float length = sqrt(v->x * v->x + v->y * v->y + v->z + v->z);
+    v->x /= length;
+    v->y /= length;
+    v->z /= length;
 }
 
 float vec3_dot(const Vec3 v1, const Vec3 v2) {

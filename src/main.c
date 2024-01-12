@@ -12,7 +12,7 @@ Triangle* trianglesToRender = nil;
 Vec3 cameraPosition         = {
     .x = 0,
     .y = 0,
-    .z = -5
+    .z = 0,
 };
 float fovFactor       = 640;
 int previousFrameTime = 0;
@@ -33,6 +33,7 @@ void setup(void) {
     );
 
     // loadCubeMeshData();
+    // loadOBJFileData("../assets/cube.obj");
     loadOBJFileData("../assets/f22.obj");
 }
 
@@ -75,8 +76,8 @@ void update(void) {
 
     const float rotation = 0.005;
     mesh.rotation.x += rotation;
-    // mesh.rotation.y += rotation;
-    // mesh.rotation.z += rotation;
+    mesh.rotation.y += rotation;
+    mesh.rotation.z += rotation;
 
     for (int i = 0; i < array_length(mesh.faces); i++) {
         const Face meshFace       = mesh.faces[i];
@@ -86,15 +87,51 @@ void update(void) {
             mesh.vertices[meshFace.c - 1],
         };
 
-        Triangle projectedTriangle;
+        Vec3 transformedVertices[3];
         for (int j = 0; j < 3; j++) {
             Vec3 transformedVertex = vec3_rotateY(faceVertices[j], mesh.rotation.y);
             transformedVertex      = vec3_rotateX(transformedVertex, mesh.rotation.x);
             transformedVertex      = vec3_rotateY(transformedVertex, mesh.rotation.z);
 
             // trnaslate vertex away from camera
-            transformedVertex.z -= cameraPosition.z;
-            Vec2 projectedVertex = project(transformedVertex);
+            transformedVertex.z += 5; // pushing everything inside the screen 5 units
+            transformedVertices[j] = transformedVertex;
+        }
+
+        // triangle culling
+        /*   A
+         *  /  \
+         * B----C */
+        const Vec3 vectorA = transformedVertices[0];
+        const Vec3 vectorB = transformedVertices[1];
+        const Vec3 vectorC = transformedVertices[2];
+
+        const Vec3 vectorAB = vec3_sub(vectorB, vectorA);
+        const Vec3 vectorAC = vec3_sub(vectorC, vectorA);
+        // vec3_normalize(&vectorAB);
+        // vec3_normalize(&vectorAC);
+
+        // compute face normal using the cross product to find the perpendicular.
+        // the order matters, we are using a left handed coordinate system (Z
+        // grows inside the screen).
+        Vec3 normal = vec3_cross(vectorAB, vectorAC);
+
+        // normalize the normal
+        vec3_normalize(&normal);
+
+        // find the vector between a point in the triangle and the camera origin
+        const Vec3 cameraRay = vec3_sub(cameraPosition, vectorA);
+
+        // check if this triangle is aligned with the screen
+        // bypass the triangles that are looking away from the camera
+        if (vec3_dot(normal, cameraRay) < 0) {
+            continue;;
+        }
+
+        // loop all three vertices to perform projection
+        Triangle projectedTriangle;
+        for (int j = 0; j < 3; j++) {
+            Vec2 projectedVertex = project(transformedVertices[j]);
 
             // scale and translate the projected points to the middle of the screen
             projectedVertex.x += (windowWidth / 2);
@@ -102,7 +139,6 @@ void update(void) {
             projectedTriangle.points[j] = projectedVertex;
         }
 
-        // trianglesToRender[i] = projectedTriangle;
         array_push(trianglesToRender, projectedTriangle);
     }
 }
@@ -111,18 +147,31 @@ void render(void) {
     drawGrid();
 
     // render the projected triangles
-    const int numOfTriangles = array_length(trianglesToRender);
-    for (int i = 0; i < numOfTriangles; i++) {
-        const Triangle t = trianglesToRender[i];
-        const uint32_t color = 0xFF00FF00;
-        // const uint32_t color = 0xFFFFFFFF;
-        // drawing the vertex points
-        // drawRect(t.points[0].x, t.points[0].y, 3, 3, 0xFFFFFFFF);
-        // drawRect(t.points[1].x, t.points[1].y, 3, 3, 0xFFFFFFFF);
-        // drawRect(t.points[2].x, t.points[2].y, 3, 3, 0xFFFFFFFF);
-        // drawing the actual triangle
-        drawTriangle(t.points[0], t.points[1], t.points[2], color);
-    }
+    // const int numOfTriangles = array_length(trianglesToRender);
+    // for (int i = 0; i < numOfTriangles; i++) {
+    //     const Triangle t     = trianglesToRender[i];
+    //     const uint32_t color = 0xFF00FF00;
+    //     // const uint32_t color = 0xFFFFFFFF;
+    //     // drawing the vertex points
+    //     // drawRect(t.points[0].x, t.points[0].y, 3, 3, 0xFFFFFFFF);
+    //     // drawRect(t.points[1].x, t.points[1].y, 3, 3, 0xFFFFFFFF);
+    //     // drawRect(t.points[2].x, t.points[2].y, 3, 3, 0xFFFFFFFF);
+    //     // drawing the actual triangle
+    //     drawTriangle(t.points[0], t.points[1], t.points[2], color);
+    // }
+    drawTriangle(
+        (Vec2){300, 100},
+        (Vec2){50, 400},
+        (Vec2){500, 700},
+        0xFF00FFFF
+    );
+
+    drawFilledTriangle(
+        300, 100,
+        50, 400,
+        500, 700,
+        0xFFFFFFFF
+    );
 
     // clear triangles - todo dont do this
     array_free(trianglesToRender);
