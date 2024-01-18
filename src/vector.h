@@ -16,6 +16,13 @@ typedef struct vec3 {
     float z;
 } Vec3;
 
+typedef struct vec4 {
+    float x;
+    float y;
+    float z;
+    float w;
+} Vec4;
+
 Vec2 vec2_add(Vec2 v1, Vec2 v2);
 Vec2 vec2_sub(Vec2 v1, Vec2 v2);
 Vec2 vec2_mul(Vec2 v1, float factor);
@@ -36,5 +43,8 @@ float vec3_length(Vec3 v);
 Vec3 vec3_rotateX(Vec3 v, float angle);
 Vec3 vec3_rotateY(Vec3 v, float angle);
 Vec3 vec3_rotateZ(Vec3 v, float angle);
+
+Vec4 vec4_from_vec3(Vec3 v);
+Vec3 vec3_from_vec4(Vec4 v);
 
 #endif //VECTOR_H

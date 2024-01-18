@@ -5,6 +5,7 @@
 #include "display.h"
 #include "mesh.h"
 #include "vector.h"
+#include "matrix.h"
 
 #define nil NULL;
 
@@ -100,6 +101,12 @@ void update(void) {
         mesh.rotation.x += rotation;
         mesh.rotation.y += rotation;
         mesh.rotation.z += rotation;
+        mesh.scale.x += 0.002f;
+        mesh.scale.y += 0.002f;
+        mesh.scale.z += 0.002f;
+        mesh.translation.x += 0.008f;
+//        mesh.translation.y += 0.002f;
+        mesh.translation.z = 5.f;
     }
 
     for (int i = 0; i < array_length(mesh.faces); i++) {
@@ -110,14 +117,13 @@ void update(void) {
             mesh.vertices[meshFace.c - 1],
         };
 
-        Vec3 transformedVertices[3];
+        Vec4 transformedVertices[3];
         for (int j = 0; j < 3; j++) {
-            Vec3 transformedVertex = vec3_rotateY(faceVertices[j], mesh.rotation.y);
-            transformedVertex = vec3_rotateX(transformedVertex, mesh.rotation.x);
-            transformedVertex = vec3_rotateY(transformedVertex, mesh.rotation.z);
+            Vec4 transformedVertex = vec4_from_vec3(faceVertices[j]);
 
-            // translate vertex away from camera
-            transformedVertex.z += 5; // pushing everything inside the screen 5 units
+            Mat4 worldMatrix = mat4_makeWorld(mesh.translation, mesh.rotation, mesh.scale);
+            transformedVertex = mat4_mulVec4(worldMatrix, transformedVertex);
+
             transformedVertices[j] = transformedVertex;
         }
 
@@ -126,14 +132,13 @@ void update(void) {
          *  /  \
          * B----C */
         if (cullMethod == CULL_BACKFACE) {
-            const Vec3 vectorA = transformedVertices[0];
-            const Vec3 vectorB = transformedVertices[1];
-            const Vec3 vectorC = transformedVertices[2];
-
-            const Vec3 vectorAB = vec3_sub(vectorB, vectorA);
-            const Vec3 vectorAC = vec3_sub(vectorC, vectorA);
-            // vec3_normalize(&vectorAB);
-            // vec3_normalize(&vectorAC);
+            const Vec3 vectorA = vec3_from_vec4(transformedVertices[0]);
+            const Vec3 vectorB = vec3_from_vec4(transformedVertices[1]);
+            const Vec3 vectorC = vec3_from_vec4(transformedVertices[2]);
+            Vec3 vectorAB = vec3_sub(vectorB, vectorA);
+            Vec3 vectorAC = vec3_sub(vectorC, vectorA);
+            vec3_normalize(&vectorAB);
+            vec3_normalize(&vectorAC);
 
             // compute face normal using the cross product to find the perpendicular.
             // the order matters, we are using a left handed coordinate system (Z
@@ -156,7 +161,7 @@ void update(void) {
         // loop all three vertices to perform projection
         Vec2 projectedPoints[3];
         for (int j = 0; j < 3; j++) {
-            projectedPoints[j] = project(transformedVertices[j]);
+            projectedPoints[j] = project(vec3_from_vec4(transformedVertices[j]));
 
             // scale and translate the projected points to the middle of the screen
             projectedPoints[j].x += (windowWidth / 2);
@@ -167,7 +172,11 @@ void update(void) {
         // the transformations
         float avgDepth = (transformedVertices[0].z + transformedVertices[1].z + transformedVertices[2].z) / 3;
         Triangle projectedTriangle = {
-            .points = {projectedPoints[0], projectedPoints[1], projectedPoints[2]},
+            .points = {
+                {projectedPoints[0].x, projectedPoints[0].y},
+                {projectedPoints[1].x, projectedPoints[1].y},
+                {projectedPoints[2].x, projectedPoints[2].y},
+            },
             .color = meshFace.color,
             .avgDepth = avgDepth,
         };

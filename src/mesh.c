@@ -44,6 +44,8 @@ Mesh mesh = {
     .vertices = NULL,
     .faces = NULL,
     .rotation = {.x = 0, .y = 0, .z = 0},
+    .scale = {.x = 1.0f, .y = 1.0f, .z = 1.0f},
+    .translation = {.x = 0, .y = 0, .z = 0},
 };
 
 void loadCubeMeshData(void) {

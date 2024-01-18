@@ -90,7 +90,7 @@ Vec3 vec3_cross(const Vec3 v1, const Vec3 v2) {
 }
 
 void vec3_normalize(Vec3* v) {
-    const float length = sqrt(v->x * v->x + v->y * v->y + v->z + v->z);
+    const float length = sqrt(v->x * v->x + v->y * v->y + v->z * v->z);
     v->x /= length;
     v->y /= length;
     v->z /= length;
@@ -126,4 +126,14 @@ Vec3 vec3_rotateZ(const Vec3 v, const float angle) {
         .y = v.x * sin(angle) + v.y * cos(angle),
         .z = v.z
     };
+}
+
+Vec4 vec4_from_vec3(Vec3 v) {
+    Vec4 result = { v.x, v.y, v.z, 1.0f };
+    return result;
+}
+
+Vec3 vec3_from_vec4(Vec4 v) {
+    Vec3 result = { v.x, v.y, v.z };
+    return result;
 }

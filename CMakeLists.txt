@@ -20,6 +20,8 @@ add_executable(sdl2_software_renderer
         src/triangle.h
         src/array.c
         src/array.h
+        src/matrix.c
+        src/matrix.h
 )
 target_link_libraries(sdl2_software_renderer ${SDL2_LIBRARIES})
 
