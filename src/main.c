@@ -8,7 +8,7 @@
 
 #define nil NULL;
 
-Triangle *trianglesToRender = nil;
+Triangle* trianglesToRender = nil;
 Vec3 cameraPosition = {
     .x = 0,
     .y = 0,
@@ -18,12 +18,13 @@ float fovFactor = 640;
 int previousFrameTime = 0;
 
 bool isRunning = false;
+bool isPaused = false;
 
 void setup(void) {
     // Allocate the required memory in bytes to hold the color buffer
     renderMethod = RENDER_WIRE;
     cullMethod = CULL_BACKFACE;
-    colorBuffer = (uint32_t *) malloc(sizeof(uint32_t) * windowWidth * windowHeight);
+    colorBuffer = (uint32_t*) malloc(sizeof(uint32_t) * windowWidth * windowHeight);
 
     // // Creating a SDL texture that is used to display the color buffer
     colorBufferTexture = SDL_CreateTexture(
@@ -68,6 +69,9 @@ void processInput(void) {
             if (event.key.keysym.sym == SDLK_d) {
                 cullMethod = CULL_NONE;
             }
+            if (event.key.keysym.sym == SDLK_SPACE) {
+                isPaused = !isPaused;
+            }
             break;
         default: break;
     }
@@ -91,10 +95,12 @@ void update(void) {
     // each update init the triangles to render, todo(hector) - dont do this
     trianglesToRender = nil;
 
-    const float rotation = 0.005;
-    mesh.rotation.x += rotation;
-    mesh.rotation.y += rotation;
-    mesh.rotation.z += rotation;
+    if (!isPaused) {
+        const float rotation = 0.005f;
+        mesh.rotation.x += rotation;
+        mesh.rotation.y += rotation;
+        mesh.rotation.z += rotation;
+    }
 
     for (int i = 0; i < array_length(mesh.faces); i++) {
         const Face meshFace = mesh.faces[i];
@@ -156,12 +162,30 @@ void update(void) {
             projectedPoints[j].x += (windowWidth / 2);
             projectedPoints[j].y += (windowHeight / 2);
         }
+
+        // calculate the average depth of each face based on the vertices after
+        // the transformations
+        float avgDepth = (transformedVertices[0].z + transformedVertices[1].z + transformedVertices[2].z) / 3;
         Triangle projectedTriangle = {
             .points = {projectedPoints[0], projectedPoints[1], projectedPoints[2]},
             .color = meshFace.color,
+            .avgDepth = avgDepth,
         };
 
         array_push(trianglesToRender, projectedTriangle);
+    }
+
+    // bubble sort the triangles to render their avgDepth.
+    // slow but meh, this is a demo any ways
+    int numTriangles = array_length(trianglesToRender);
+    for (int i = 0; i < numTriangles; ++i) {
+        for (int j = i; j < numTriangles; ++j) {
+            if (trianglesToRender[i].avgDepth < trianglesToRender[j].avgDepth) {
+                Triangle tmp = trianglesToRender[i];
+                trianglesToRender[i] = trianglesToRender[j];
+                trianglesToRender[j] = tmp;
+            }
+        }
     }
 }
 
@@ -175,7 +199,6 @@ void render(void) {
     const int numOfTriangles = array_length(trianglesToRender);
     for (int i = 0; i < numOfTriangles; i++) {
         const Triangle t = trianglesToRender[i];
-        const uint32_t color = 0xFF555555;
 
         if (renderMethod == RENDER_FILL_TRIANGLE || renderMethod == RENDER_FILL_TRIANGLE_WIRE) {
             drawFilledTriangle(

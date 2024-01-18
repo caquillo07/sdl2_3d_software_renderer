@@ -9,14 +9,15 @@
 
 #include "vector.h"
 
-typedef struct {
+typedef struct Face {
     int a, b, c;
     uint32_t color;
 } Face;
 
-typedef struct {
+typedef struct Triangle {
     Vec2 points[3];
     uint32_t color;
+    float avgDepth;
 } Triangle;
 
 void drawFilledTriangle(int x0, int y0, int x1, int y1, int x2, int y2, uint32_t color);
