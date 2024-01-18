@@ -18,10 +18,11 @@ float fovFactor = 640;
 int previousFrameTime = 0;
 
 bool isRunning = false;
-bool isWireframeMode = false;
 
 void setup(void) {
     // Allocate the required memory in bytes to hold the color buffer
+    renderMethod = RENDER_WIRE;
+    cullMethod = CULL_BACKFACE;
     colorBuffer = (uint32_t *) malloc(sizeof(uint32_t) * windowWidth * windowHeight);
 
     // // Creating a SDL texture that is used to display the color buffer
@@ -34,7 +35,8 @@ void setup(void) {
     );
 
     // loadOBJFileData("../assets/cube.obj");
-    loadOBJFileData("../assets/f22.obj");
+//    loadOBJFileData("../assets/f22.obj");
+    loadCubeMeshData();
 }
 
 void processInput(void) {
@@ -48,11 +50,26 @@ void processInput(void) {
             if (event.key.keysym.sym == SDLK_ESCAPE) {
                 isRunning = false;
             }
-            if (event.key.keysym.sym == SDLK_F1) {
-                isWireframeMode = !isWireframeMode;
+            if (event.key.keysym.sym == SDLK_1) {
+                renderMethod = RENDER_WIRE_VERTEX;
+            }
+            if (event.key.keysym.sym == SDLK_2) {
+                renderMethod = RENDER_WIRE;
+            }
+            if (event.key.keysym.sym == SDLK_3) {
+                renderMethod = RENDER_FILL_TRIANGLE;
+            }
+            if (event.key.keysym.sym == SDLK_4) {
+                renderMethod = RENDER_FILL_TRIANGLE_WIRE;
+            }
+            if (event.key.keysym.sym == SDLK_c) {
+                cullMethod = CULL_BACKFACE;
+            }
+            if (event.key.keysym.sym == SDLK_d) {
+                cullMethod = CULL_NONE;
             }
             break;
-        default:break;
+        default: break;
     }
 }
 
@@ -63,7 +80,6 @@ Vec2 project(const Vec3 point) {
         .y = point.y * fovFactor / point.z,
     };
 }
-
 
 void update(void) {
     const int timeToWait = FRAME_TARGET_TIME - (SDL_GetTicks() - previousFrameTime);
@@ -94,7 +110,7 @@ void update(void) {
             transformedVertex = vec3_rotateX(transformedVertex, mesh.rotation.x);
             transformedVertex = vec3_rotateY(transformedVertex, mesh.rotation.z);
 
-            // trnaslate vertex away from camera
+            // translate vertex away from camera
             transformedVertex.z += 5; // pushing everything inside the screen 5 units
             transformedVertices[j] = transformedVertex;
         }
@@ -103,42 +119,47 @@ void update(void) {
         /*   A
          *  /  \
          * B----C */
-        const Vec3 vectorA = transformedVertices[0];
-        const Vec3 vectorB = transformedVertices[1];
-        const Vec3 vectorC = transformedVertices[2];
+        if (cullMethod == CULL_BACKFACE) {
+            const Vec3 vectorA = transformedVertices[0];
+            const Vec3 vectorB = transformedVertices[1];
+            const Vec3 vectorC = transformedVertices[2];
 
-        const Vec3 vectorAB = vec3_sub(vectorB, vectorA);
-        const Vec3 vectorAC = vec3_sub(vectorC, vectorA);
-        // vec3_normalize(&vectorAB);
-        // vec3_normalize(&vectorAC);
+            const Vec3 vectorAB = vec3_sub(vectorB, vectorA);
+            const Vec3 vectorAC = vec3_sub(vectorC, vectorA);
+            // vec3_normalize(&vectorAB);
+            // vec3_normalize(&vectorAC);
 
-        // compute face normal using the cross product to find the perpendicular.
-        // the order matters, we are using a left handed coordinate system (Z
-        // grows inside the screen).
-        Vec3 normal = vec3_cross(vectorAB, vectorAC);
+            // compute face normal using the cross product to find the perpendicular.
+            // the order matters, we are using a left handed coordinate system (Z
+            // grows inside the screen).
+            Vec3 normal = vec3_cross(vectorAB, vectorAC);
 
-        // normalize the normal
-        vec3_normalize(&normal);
+            // normalize the normal
+            vec3_normalize(&normal);
 
-        // find the vector between a point in the triangle and the camera origin
-        const Vec3 cameraRay = vec3_sub(cameraPosition, vectorA);
+            // find the vector between a point in the triangle and the camera origin
+            const Vec3 cameraRay = vec3_sub(cameraPosition, vectorA);
 
-        // check if this triangle is aligned with the screen
-        // bypass the triangles that are looking away from the camera
-        if (vec3_dot(normal, cameraRay) < 0) {
-            continue;;
+            // check if this triangle is aligned with the screen
+            // bypass the triangles that are looking away from the camera
+            if (vec3_dot(normal, cameraRay) < 0) {
+                continue;;
+            }
         }
 
         // loop all three vertices to perform projection
-        Triangle projectedTriangle;
+        Vec2 projectedPoints[3];
         for (int j = 0; j < 3; j++) {
-            Vec2 projectedVertex = project(transformedVertices[j]);
+            projectedPoints[j] = project(transformedVertices[j]);
 
             // scale and translate the projected points to the middle of the screen
-            projectedVertex.x += (windowWidth / 2);
-            projectedVertex.y += (windowHeight / 2);
-            projectedTriangle.points[j] = projectedVertex;
+            projectedPoints[j].x += (windowWidth / 2);
+            projectedPoints[j].y += (windowHeight / 2);
         }
+        Triangle projectedTriangle = {
+            .points = {projectedPoints[0], projectedPoints[1], projectedPoints[2]},
+            .color = meshFace.color,
+        };
 
         array_push(trianglesToRender, projectedTriangle);
     }
@@ -154,31 +175,39 @@ void render(void) {
     const int numOfTriangles = array_length(trianglesToRender);
     for (int i = 0; i < numOfTriangles; i++) {
         const Triangle t = trianglesToRender[i];
-        const uint32_t color = 0xFF00FF00;
+        const uint32_t color = 0xFF555555;
 
-        // drawing the actual triangle
-        if (isWireframeMode) {
-            drawTriangle(t.points[0], t.points[1], t.points[2], color);
-        } else {
+        if (renderMethod == RENDER_FILL_TRIANGLE || renderMethod == RENDER_FILL_TRIANGLE_WIRE) {
             drawFilledTriangle(
                 t.points[0].x, t.points[0].y,
                 t.points[1].x, t.points[1].y,
                 t.points[2].x, t.points[2].y,
-                color
+                t.color
             );
+        }
 
+        if (renderMethod == RENDER_WIRE ||
+            renderMethod == RENDER_WIRE_VERTEX ||
+            renderMethod == RENDER_FILL_TRIANGLE_WIRE) {
             drawTriangle(
                 t.points[0],
                 t.points[1],
                 t.points[2],
-                0xFF00000
+                0xFFFFFFF
             );
+        }
+
+        if (renderMethod == RENDER_WIRE_VERTEX) {
+            const uint32_t dotColor = 0xFFFF0000;
+            drawRect(t.points[0].x - 3, t.points[0].y - 3, 6, 6, dotColor);
+            drawRect(t.points[1].x - 3, t.points[1].y - 3, 6, 6, dotColor);
+            drawRect(t.points[2].x - 3, t.points[2].y - 3, 6, 6, dotColor);
         }
     }
 
     drawFilledTriangle(300, 300, 200, 500, 500, 700, 0xFF00FF00);
 
-    // clear triangles - todo dont do this
+    // clear triangles - todo - dont do this
     array_free(trianglesToRender);
     renderColorBuffer();
     clearColorBuffer(0xFF000000);
@@ -196,7 +225,6 @@ int main(void) {
 
     setup();
 
-    // ReSharper disable once CppDFALoopConditionNotUpdated
     while (isRunning) {
         processInput();
         update();

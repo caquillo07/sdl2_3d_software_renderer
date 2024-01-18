@@ -9,10 +9,22 @@
 #define FPS 60
 #define FRAME_TARGET_TIME (1000 / FPS)
 
-extern SDL_Window* window;
-extern SDL_Renderer* renderer;
-extern uint32_t* colorBuffer;
-extern SDL_Texture* colorBufferTexture;
+enum CullMethod {
+    CULL_NONE,
+    CULL_BACKFACE,
+} cullMethod;
+
+enum RenderMethod {
+    RENDER_WIRE,
+    RENDER_WIRE_VERTEX,
+    RENDER_FILL_TRIANGLE,
+    RENDER_FILL_TRIANGLE_WIRE,
+} renderMethod;
+
+extern SDL_Window *window;
+extern SDL_Renderer *renderer;
+extern uint32_t *colorBuffer;
+extern SDL_Texture *colorBufferTexture;
 extern int windowWidth;
 extern int windowHeight;
 
