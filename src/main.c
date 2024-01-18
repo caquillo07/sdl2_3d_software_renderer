@@ -8,20 +8,21 @@
 
 #define nil NULL;
 
-Triangle* trianglesToRender = nil;
-Vec3 cameraPosition         = {
+Triangle *trianglesToRender = nil;
+Vec3 cameraPosition = {
     .x = 0,
     .y = 0,
     .z = 0,
 };
-float fovFactor       = 640;
+float fovFactor = 640;
 int previousFrameTime = 0;
 
 bool isRunning = false;
+bool isWireframeMode = false;
 
 void setup(void) {
     // Allocate the required memory in bytes to hold the color buffer
-    colorBuffer = (uint32_t *)malloc(sizeof(uint32_t) * windowWidth * windowHeight);
+    colorBuffer = (uint32_t *) malloc(sizeof(uint32_t) * windowWidth * windowHeight);
 
     // // Creating a SDL texture that is used to display the color buffer
     colorBufferTexture = SDL_CreateTexture(
@@ -32,7 +33,6 @@ void setup(void) {
         windowHeight
     );
 
-    // loadCubeMeshData();
     // loadOBJFileData("../assets/cube.obj");
     loadOBJFileData("../assets/f22.obj");
 }
@@ -42,22 +42,23 @@ void processInput(void) {
     SDL_PollEvent(&event);
 
     switch (event.type) {
-        case SDL_QUIT:
-            isRunning = false;
+        case SDL_QUIT:isRunning = false;
             break;
         case SDL_KEYDOWN:
             if (event.key.keysym.sym == SDLK_ESCAPE) {
                 isRunning = false;
             }
+            if (event.key.keysym.sym == SDLK_F1) {
+                isWireframeMode = !isWireframeMode;
+            }
             break;
-        default:
-            break;
+        default:break;
     }
 }
 
 // simple naive perspective projection
 Vec2 project(const Vec3 point) {
-    return (Vec2){
+    return (Vec2) {
         .x = point.x * fovFactor / point.z,
         .y = point.y * fovFactor / point.z,
     };
@@ -80,7 +81,7 @@ void update(void) {
     mesh.rotation.z += rotation;
 
     for (int i = 0; i < array_length(mesh.faces); i++) {
-        const Face meshFace       = mesh.faces[i];
+        const Face meshFace = mesh.faces[i];
         const Vec3 faceVertices[] = {
             mesh.vertices[meshFace.a - 1],
             mesh.vertices[meshFace.b - 1],
@@ -90,8 +91,8 @@ void update(void) {
         Vec3 transformedVertices[3];
         for (int j = 0; j < 3; j++) {
             Vec3 transformedVertex = vec3_rotateY(faceVertices[j], mesh.rotation.y);
-            transformedVertex      = vec3_rotateX(transformedVertex, mesh.rotation.x);
-            transformedVertex      = vec3_rotateY(transformedVertex, mesh.rotation.z);
+            transformedVertex = vec3_rotateX(transformedVertex, mesh.rotation.x);
+            transformedVertex = vec3_rotateY(transformedVertex, mesh.rotation.z);
 
             // trnaslate vertex away from camera
             transformedVertex.z += 5; // pushing everything inside the screen 5 units
@@ -146,32 +147,36 @@ void update(void) {
 void render(void) {
     drawGrid();
 
-    // render the projected triangles
-    // const int numOfTriangles = array_length(trianglesToRender);
-    // for (int i = 0; i < numOfTriangles; i++) {
-    //     const Triangle t     = trianglesToRender[i];
-    //     const uint32_t color = 0xFF00FF00;
-    //     // const uint32_t color = 0xFFFFFFFF;
-    //     // drawing the vertex points
-    //     // drawRect(t.points[0].x, t.points[0].y, 3, 3, 0xFFFFFFFF);
-    //     // drawRect(t.points[1].x, t.points[1].y, 3, 3, 0xFFFFFFFF);
-    //     // drawRect(t.points[2].x, t.points[2].y, 3, 3, 0xFFFFFFFF);
-    //     // drawing the actual triangle
-    //     drawTriangle(t.points[0], t.points[1], t.points[2], color);
-    // }
-    drawTriangle(
-        (Vec2){300, 100},
-        (Vec2){50, 400},
-        (Vec2){500, 700},
-        0xFF00FFFF
-    );
+    // Loop all projected triangles and render them
 
-    drawFilledTriangle(
-        300, 100,
-        50, 400,
-        500, 700,
-        0xFFFFFFFF
-    );
+
+    // render the projected triangles
+    const int numOfTriangles = array_length(trianglesToRender);
+    for (int i = 0; i < numOfTriangles; i++) {
+        const Triangle t = trianglesToRender[i];
+        const uint32_t color = 0xFF00FF00;
+
+        // drawing the actual triangle
+        if (isWireframeMode) {
+            drawTriangle(t.points[0], t.points[1], t.points[2], color);
+        } else {
+            drawFilledTriangle(
+                t.points[0].x, t.points[0].y,
+                t.points[1].x, t.points[1].y,
+                t.points[2].x, t.points[2].y,
+                color
+            );
+
+            drawTriangle(
+                t.points[0],
+                t.points[1],
+                t.points[2],
+                0xFF00000
+            );
+        }
+    }
+
+    drawFilledTriangle(300, 300, 200, 500, 500, 700, 0xFF00FF00);
 
     // clear triangles - todo dont do this
     array_free(trianglesToRender);
