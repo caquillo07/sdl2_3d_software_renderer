@@ -15,7 +15,8 @@ Vec3 cameraPosition = {
     .y = 0,
     .z = 0,
 };
-float fovFactor = 640;
+Mat4 projectionMatrix;
+
 int previousFrameTime = 0;
 
 bool isRunning = false;
@@ -34,6 +35,15 @@ void setup(void) {
         SDL_TEXTUREACCESS_STREAMING,
         windowWidth,
         windowHeight
+    );
+
+    // init perspective projection matrix
+    const float fov = M_PI / 3.0f;  // the same as 180/3, or 60 degrees
+    projectionMatrix = mat4_makePerspective(
+        fov,
+        (float) windowHeight / (float) windowWidth,
+        0.1f,
+        100.0f
     );
 
     // loadOBJFileData("../assets/cube.obj");
@@ -78,14 +88,6 @@ void processInput(void) {
     }
 }
 
-// simple naive perspective projection
-Vec2 project(const Vec3 point) {
-    return (Vec2) {
-        .x = point.x * fovFactor / point.z,
-        .y = point.y * fovFactor / point.z,
-    };
-}
-
 void update(void) {
     const int timeToWait = FRAME_TARGET_TIME - (SDL_GetTicks() - previousFrameTime);
     if (timeToWait > 0 && timeToWait <= FRAME_TARGET_TIME) {
@@ -99,12 +101,12 @@ void update(void) {
     if (!isPaused) {
         const float rotation = 0.005f;
         mesh.rotation.x += rotation;
-        mesh.rotation.y += rotation;
-        mesh.rotation.z += rotation;
-        mesh.scale.x += 0.002f;
-        mesh.scale.y += 0.002f;
-        mesh.scale.z += 0.002f;
-        mesh.translation.x += 0.008f;
+//        mesh.rotation.y += rotation;
+//        mesh.rotation.z += rotation;
+//        mesh.scale.x += 0.002f;
+//        mesh.scale.y += 0.002f;
+//        mesh.scale.z += 0.002f;
+//        mesh.translation.x += 0.008f;
 //        mesh.translation.y += 0.002f;
         mesh.translation.z = 5.f;
     }
@@ -159,13 +161,16 @@ void update(void) {
         }
 
         // loop all three vertices to perform projection
-        Vec2 projectedPoints[3];
+        Vec4 projectedPoints[3];
         for (int j = 0; j < 3; j++) {
-            projectedPoints[j] = project(vec3_from_vec4(transformedVertices[j]));
+            projectedPoints[j] = mat4_mulVec4Project(projectionMatrix, transformedVertices[j]);
+            // Scale into the viewport (has to go first)
+            projectedPoints[j].x *= (float)windowWidth / 2.0f;
+            projectedPoints[j].y *= (float)windowHeight / 2.0f;
 
-            // scale and translate the projected points to the middle of the screen
-            projectedPoints[j].x += (windowWidth / 2);
-            projectedPoints[j].y += (windowHeight / 2);
+            // translate the projected points to the middle of the screen
+            projectedPoints[j].x += (float) windowWidth / 2.0f;
+            projectedPoints[j].y += (float) windowHeight / 2.0f;
         }
 
         // calculate the average depth of each face based on the vertices after

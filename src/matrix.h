@@ -18,7 +18,9 @@ Mat4 mat4_makeRotationX(float rx);
 Mat4 mat4_makeRotationY(float angle);
 Mat4 mat4_makeRotationZ(float rz);
 Mat4 mat4_makeWorld(Vec3 position, Vec3 rotation, Vec3 scale);
+Mat4 mat4_makePerspective(float fov, float aspect, float znear, float zfar);
 Vec4 mat4_mulVec4(Mat4 m, Vec4 v);
 Mat4 mat4_mulMat4(Mat4 m1, Mat4 m2);
+Vec4 mat4_mulVec4Project(Mat4 m, Vec4 v);
 
 #endif //SDL2_SOFTWARE_RENDERER_MATRIX_H

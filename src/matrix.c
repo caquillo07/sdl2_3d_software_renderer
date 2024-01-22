@@ -124,12 +124,43 @@ Mat4 mat4_makeWorld(Vec3 position, Vec3 rotation, Vec3 scale) {
 Mat4 mat4_mulMat4(Mat4 m1, Mat4 m2) {
     Mat4 result = mat4_identity();
     for (int row = 0; row < 4; row++) {
-        for (int col = 0; col < 4 ; col++) {
+        for (int col = 0; col < 4; col++) {
             result.m[row][col] = m1.m[row][0] * m2.m[0][col] +
-                               m1.m[row][1] * m2.m[1][col] +
-                               m1.m[row][2] * m2.m[2][col] +
-                               m1.m[row][3] * m2.m[3][col];
+                                 m1.m[row][1] * m2.m[1][col] +
+                                 m1.m[row][2] * m2.m[2][col] +
+                                 m1.m[row][3] * m2.m[3][col];
         }
+    }
+    return result;
+}
+
+Mat4 mat4_makePerspective(float fov, float aspect, float znear, float zfar) {
+    // | (h/w)*1/tan(fov/2)             0              0                 0 |
+    // |                  0  1/tan(fov/2)              0                 0 |
+    // |                  0             0     zf/(zf-zn)  (-zf*zn)/(zf-zn) |
+    // |                  0             0              1                 0 |
+    Mat4 result = {
+        .m = {
+            {0},
+        }
+    };
+    result.m[0][0] = aspect * (1 / tanf(fov / 2));
+    result.m[1][1] = 1 / tanf(fov / 2);
+    result.m[2][2] = zfar / (zfar - znear);
+    result.m[2][3] = (-zfar * znear) / (zfar - znear);
+    result.m[3][2] = 1.0f;
+    return result;
+}
+
+Vec4 mat4_mulVec4Project(Mat4 m, Vec4 v) {
+    // multiply the projection matrix by our original vector
+    Vec4 result = mat4_mulVec4(m, v);
+
+    // perform perspective divide with original z-value that is now stored in w
+    if (result.w != 0.0) {
+        result.x /= result.w;
+        result.y /= result.w;
+        result.z /= result.w;
     }
     return result;
 }
