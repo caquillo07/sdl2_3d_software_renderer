@@ -21,23 +21,23 @@ Vec3 cubeVertices[N_CUBE_VERTICES] = {
 
 Face cubeFaces[N_CUBE_FACES] = {
     // front
-    {.a = 1, .b = 2, .c = 3, .color = 0xFFFF0000},
-    {.a = 1, .b = 3, .c = 4, .color = 0xFFFF0000},
+    {.a = 1, .b = 2, .c = 3, .color = 0xFFFFFFFF},
+    {.a = 1, .b = 3, .c = 4, .color = 0xFFFFFFFF},
     // right
-    {.a = 4, .b = 3, .c = 5, .color = 0xFF00FF00},
-    {.a = 4, .b = 5, .c = 6, .color = 0xFF00FF00},
+    {.a = 4, .b = 3, .c = 5, .color = 0xFFFFFFFF},
+    {.a = 4, .b = 5, .c = 6, .color = 0xFFFFFFFF},
     // back
-    {.a = 6, .b = 5, .c = 7, .color = 0x0FF0000FF},
-    {.a = 6, .b = 7, .c = 8, .color = 0x0FF0000FF},
+    {.a = 6, .b = 5, .c = 7, .color = 0x0FFFFFFFF},
+    {.a = 6, .b = 7, .c = 8, .color = 0x0FFFFFFFF},
     // left
-    {.a = 8, .b = 7, .c = 2, .color = 0xFFFFFF00},
-    {.a = 8, .b = 2, .c = 1, .color = 0xFFFFFF00},
+    {.a = 8, .b = 7, .c = 2, .color = 0xFFFFFFFF},
+    {.a = 8, .b = 2, .c = 1, .color = 0xFFFFFFFF},
     // top
-    {.a = 2, .b = 7, .c = 5, .color = 0xFFFF00FF},
-    {.a = 2, .b = 5, .c = 3, .color = 0xFFFF00FF},
+    {.a = 2, .b = 7, .c = 5, .color = 0xFFFFFFFF},
+    {.a = 2, .b = 5, .c = 3, .color = 0xFFFFFFFF},
     // bottom
-    {.a = 6, .b = 8, .c = 1, .color = 0xFF00FFFF},
-    {.a = 6, .b = 1, .c = 4, .color = 0xFF00FFFF}
+    {.a = 6, .b = 8, .c = 1, .color = 0xFFFFFFFF},
+    {.a = 6, .b = 1, .c = 4, .color = 0xFFFFFFFF}
 };
 
 Mesh mesh = {
@@ -75,20 +75,21 @@ void loadOBJFileData(const char* fileName) {
             sscanf(line, "v %f %f %f", &vertex.x, &vertex.y, &vertex.z);
             array_push(mesh.vertices, vertex);
         } else if (strncmp(line, "f ", 2) == 0) {
-            int vertextIndeces[3];
+            int vertexIndices[3];
             int textureIndices[3];
             int normalIndices[3];
             sscanf(
                 line,
                 "f %d/%d/%d %d/%d/%d %d/%d/%d",
-                &vertextIndeces[0], &textureIndices[0], &normalIndices[0],
-                &vertextIndeces[1], &textureIndices[1], &normalIndices[1],
-                &vertextIndeces[2], &textureIndices[2], &normalIndices[2]
+                &vertexIndices[0], &textureIndices[0], &normalIndices[0],
+                &vertexIndices[1], &textureIndices[1], &normalIndices[1],
+                &vertexIndices[2], &textureIndices[2], &normalIndices[2]
             );
             const Face face = {
-                .a = vertextIndeces[0],
-                .b = vertextIndeces[1],
-                .c = vertextIndeces[2]
+                .a = vertexIndices[0],
+                .b = vertexIndices[1],
+                .c = vertexIndices[2],
+                .color = 0xFFFFFFFF,
             };
             array_push(mesh.faces, face);
         }

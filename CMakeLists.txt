@@ -22,6 +22,9 @@ add_executable(sdl2_software_renderer
         src/array.h
         src/matrix.c
         src/matrix.h
+        src/light.c
+        src/light.h
+        src/light.h
 )
 target_link_libraries(sdl2_software_renderer ${SDL2_LIBRARIES})
 

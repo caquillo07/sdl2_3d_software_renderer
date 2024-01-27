@@ -128,12 +128,12 @@ Vec3 vec3_rotateZ(const Vec3 v, const float angle) {
     };
 }
 
-Vec4 vec4_from_vec3(Vec3 v) {
+Vec4 vec4_fromVec3(Vec3 v) {
     Vec4 result = { v.x, v.y, v.z, 1.0f };
     return result;
 }
 
-Vec3 vec3_from_vec4(Vec4 v) {
+Vec3 vec3_fromVec4(Vec4 v) {
     Vec3 result = { v.x, v.y, v.z };
     return result;
 }

@@ -44,7 +44,7 @@ Vec3 vec3_rotateX(Vec3 v, float angle);
 Vec3 vec3_rotateY(Vec3 v, float angle);
 Vec3 vec3_rotateZ(Vec3 v, float angle);
 
-Vec4 vec4_from_vec3(Vec3 v);
-Vec3 vec3_from_vec4(Vec4 v);
+Vec4 vec4_fromVec3(Vec3 v);
+Vec3 vec3_fromVec4(Vec4 v);
 
 #endif //VECTOR_H

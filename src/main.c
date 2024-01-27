@@ -3,9 +3,10 @@
 
 #include "array.h"
 #include "display.h"
+#include "light.h"
+#include "matrix.h"
 #include "mesh.h"
 #include "vector.h"
-#include "matrix.h"
 
 #define nil NULL;
 
@@ -17,7 +18,7 @@ Vec3 cameraPosition = {
 };
 Mat4 projectionMatrix;
 
-int previousFrameTime = 0;
+Uint32 previousFrameTime = 0;
 
 bool isRunning = false;
 bool isPaused = false;
@@ -47,8 +48,8 @@ void setup(void) {
     );
 
     // loadOBJFileData("../assets/cube.obj");
-//    loadOBJFileData("../assets/f22.obj");
-    loadCubeMeshData();
+    loadOBJFileData("../assets/f22.obj");
+//    loadCubeMeshData();
 }
 
 void processInput(void) {
@@ -121,8 +122,7 @@ void update(void) {
 
         Vec4 transformedVertices[3];
         for (int j = 0; j < 3; j++) {
-            Vec4 transformedVertex = vec4_from_vec3(faceVertices[j]);
-
+            Vec4 transformedVertex = vec4_fromVec3(faceVertices[j]);
             Mat4 worldMatrix = mat4_makeWorld(mesh.translation, mesh.rotation, mesh.scale);
             transformedVertex = mat4_mulVec4(worldMatrix, transformedVertex);
 
@@ -133,26 +133,26 @@ void update(void) {
         /*   A
          *  /  \
          * B----C */
+        const Vec3 vectorA = vec3_fromVec4(transformedVertices[0]);
+        const Vec3 vectorB = vec3_fromVec4(transformedVertices[1]);
+        const Vec3 vectorC = vec3_fromVec4(transformedVertices[2]);
+        Vec3 vectorAB = vec3_sub(vectorB, vectorA);
+        Vec3 vectorAC = vec3_sub(vectorC, vectorA);
+        vec3_normalize(&vectorAB);
+        vec3_normalize(&vectorAC);
+
+        // compute face normal using the cross product to find the perpendicular.
+        // the order matters, we are using a left-handed coordinate system (Z
+        // grows inside the screen).
+        Vec3 normal = vec3_cross(vectorAB, vectorAC);
+
+        // normalize the normal
+        vec3_normalize(&normal);
+
+        // find the vector between a point in the triangle and the camera origin
+        const Vec3 cameraRay = vec3_sub(cameraPosition, vectorA);
+
         if (cullMethod == CULL_BACKFACE) {
-            const Vec3 vectorA = vec3_from_vec4(transformedVertices[0]);
-            const Vec3 vectorB = vec3_from_vec4(transformedVertices[1]);
-            const Vec3 vectorC = vec3_from_vec4(transformedVertices[2]);
-            Vec3 vectorAB = vec3_sub(vectorB, vectorA);
-            Vec3 vectorAC = vec3_sub(vectorC, vectorA);
-            vec3_normalize(&vectorAB);
-            vec3_normalize(&vectorAC);
-
-            // compute face normal using the cross product to find the perpendicular.
-            // the order matters, we are using a left handed coordinate system (Z
-            // grows inside the screen).
-            Vec3 normal = vec3_cross(vectorAB, vectorAC);
-
-            // normalize the normal
-            vec3_normalize(&normal);
-
-            // find the vector between a point in the triangle and the camera origin
-            const Vec3 cameraRay = vec3_sub(cameraPosition, vectorA);
-
             // check if this triangle is aligned with the screen
             // bypass the triangles that are looking away from the camera
             if (vec3_dot(normal, cameraRay) < 0) {
@@ -165,8 +165,11 @@ void update(void) {
         for (int j = 0; j < 3; j++) {
             projectedPoints[j] = mat4_mulVec4Project(projectionMatrix, transformedVertices[j]);
             // Scale into the viewport (has to go first)
-            projectedPoints[j].x *= (float)windowWidth / 2.0f;
-            projectedPoints[j].y *= (float)windowHeight / 2.0f;
+            projectedPoints[j].x *= (float) windowWidth / 2.0f;
+            projectedPoints[j].y *= (float) windowHeight / 2.0f;
+
+            // in screen space, invert Y values to account for flipped screen coordinates
+            projectedPoints[j].y *= -1;
 
             // translate the projected points to the middle of the screen
             projectedPoints[j].x += (float) windowWidth / 2.0f;
@@ -176,13 +179,22 @@ void update(void) {
         // calculate the average depth of each face based on the vertices after
         // the transformations
         float avgDepth = (transformedVertices[0].z + transformedVertices[1].z + transformedVertices[2].z) / 3;
+
+        // Calculate the shade of the triangle based on the direction of the light
+        // and the normal of the face.
+        // we need the inverse of the normal to calculate the light intensity because
+        // our Z grows towards the screen, not from the screen.
+        float lightIntensityFactor = -1 * vec3_dot(normal, light.direction);
+
+        uint32_t triangleColor = lightApplyIntensity(meshFace.color, lightIntensityFactor);
+
         Triangle projectedTriangle = {
             .points = {
                 {projectedPoints[0].x, projectedPoints[0].y},
                 {projectedPoints[1].x, projectedPoints[1].y},
                 {projectedPoints[2].x, projectedPoints[2].y},
             },
-            .color = meshFace.color,
+            .color = triangleColor,
             .avgDepth = avgDepth,
         };
 
@@ -207,8 +219,6 @@ void render(void) {
     drawGrid();
 
     // Loop all projected triangles and render them
-
-
     // render the projected triangles
     const int numOfTriangles = array_length(trianglesToRender);
     for (int i = 0; i < numOfTriangles; i++) {
