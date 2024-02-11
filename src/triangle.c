@@ -141,8 +141,12 @@ void drawTexel(
 
 
     // perform the interpolation of all U/2 and V/w values using the barycentric weights and a factor of 1/w
-    float interpolatedU = ((vertexA_UV.u / pointA.w) * alpha) + ((vertexB_UV.u / pointB.w) * beta) + ((vertexC_UV.u / pointC.w) * gamma);
-    float interpolatedV = ((vertexA_UV.v / pointA.w) * alpha) + ((vertexB_UV.v / pointB.w) * beta) + ((vertexC_UV.v / pointC.w) * gamma);
+    float interpolatedU = ((vertexA_UV.u / pointA.w) * alpha) +
+                          ((vertexB_UV.u / pointB.w) * beta) +
+                          ((vertexC_UV.u / pointC.w) * gamma);
+    float interpolatedV = ((vertexA_UV.v / pointA.w) * alpha) +
+                          ((vertexB_UV.v / pointB.w) * beta) +
+                          ((vertexC_UV.v / pointC.w) * gamma);
 
     // in a real project, we could pass this in so its not calculated on each iteration.
     // This would speed it up quite a bit since division is _slow_.
@@ -152,11 +156,15 @@ void drawTexel(
     interpolatedV /= interpolatedReciprocalW;
 
     // Map the UV coordinates to the texture
-    int textureX = abs((int) (interpolatedU * textureWidth));
-    int textureY = abs((int) (interpolatedV * textureHeight));
+
+    // The modulus is to wrap around the texture if it goes out of bounds, this
+    // is a bit of a hack, but it works for this demo.
+    int textureX = abs((int) (interpolatedU * textureWidth)) % textureWidth;
+    int textureY = abs((int) (interpolatedV * textureHeight)) % textureHeight;
 
     uint32_t texelIndex = (textureY * textureWidth) + textureX;
     if (texelIndex >= textureWidth * textureHeight) {
+        printf("Texel index out of bounds: %d\n", texelIndex);
         return;
     }
     drawPixel(x, y, texture[texelIndex]);
@@ -193,6 +201,12 @@ void drawTexturedTriangle(
         floatSwap(&z0, &z1);
         floatSwap(&w0, &w1);
     }
+
+    // flip the V component to account for inverted UV-coordinates; where
+    // V grows downwards instead of upwards.
+    v0 = 1.f - v0;
+    v1 = 1.f - v1;
+    v2 = 1.f - v2;
 
     // create vector points after we sort the vertices
     Vec4 pointA = {.x = x0, .y = y0, .z = z0, .w = w0};

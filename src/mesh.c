@@ -21,23 +21,23 @@ Vec3 cubeVertices[N_CUBE_VERTICES] = {
 
 Face cubeFaces[N_CUBE_FACES] = {
     // front
-    {.a = 1, .b = 2, .c = 3, .vertexA_UV = { 0, 1 }, .vertexB_UV = {0, 0}, .vertexC_UV = {1, 0}, .color = 0xFFFFFFFF},
-    {.a = 1, .b = 3, .c = 4, .vertexA_UV = { 0, 1 }, .vertexB_UV = {1, 0}, .vertexC_UV = {1, 1}, .color = 0xFFFFFFFF},
+    {.a = 1, .b = 2, .c = 3, .vertexA_UV = {0, 1}, .vertexB_UV = {0, 0}, .vertexC_UV = {1, 0}, .color = 0xFFFFFFFF},
+    {.a = 1, .b = 3, .c = 4, .vertexA_UV = {0, 1}, .vertexB_UV = {1, 0}, .vertexC_UV = {1, 1}, .color = 0xFFFFFFFF},
     // right
-    {.a = 4, .b = 3, .c = 5, .vertexA_UV = { 0, 1 }, .vertexB_UV = {0, 0}, .vertexC_UV = {1, 0}, .color = 0xFFFFFFFF},
-    {.a = 4, .b = 5, .c = 6, .vertexA_UV = { 0, 1 }, .vertexB_UV = {1, 0}, .vertexC_UV = {1, 1}, .color = 0xFFFFFFFF},
+    {.a = 4, .b = 3, .c = 5, .vertexA_UV = {0, 1}, .vertexB_UV = {0, 0}, .vertexC_UV = {1, 0}, .color = 0xFFFFFFFF},
+    {.a = 4, .b = 5, .c = 6, .vertexA_UV = {0, 1}, .vertexB_UV = {1, 0}, .vertexC_UV = {1, 1}, .color = 0xFFFFFFFF},
     // back
-    {.a = 6, .b = 5, .c = 7, .vertexA_UV = { 0, 1 }, .vertexB_UV = {0, 0}, .vertexC_UV = {1, 0}, .color = 0xFFFFFFFF},
-    {.a = 6, .b = 7, .c = 8, .vertexA_UV = { 0, 1 }, .vertexB_UV = {1, 0}, .vertexC_UV = {1, 1}, .color = 0xFFFFFFFF},
+    {.a = 6, .b = 5, .c = 7, .vertexA_UV = {0, 1}, .vertexB_UV = {0, 0}, .vertexC_UV = {1, 0}, .color = 0xFFFFFFFF},
+    {.a = 6, .b = 7, .c = 8, .vertexA_UV = {0, 1}, .vertexB_UV = {1, 0}, .vertexC_UV = {1, 1}, .color = 0xFFFFFFFF},
     // left
-    {.a = 8, .b = 7, .c = 2, .vertexA_UV = { 0, 1 }, .vertexB_UV = {0, 0}, .vertexC_UV = {1, 0}, .color = 0xFFFFFFFF},
-    {.a = 8, .b = 2, .c = 1, .vertexA_UV = { 0, 1 }, .vertexB_UV = {1, 0}, .vertexC_UV = {1, 1}, .color = 0xFFFFFFFF},
+    {.a = 8, .b = 7, .c = 2, .vertexA_UV = {0, 1}, .vertexB_UV = {0, 0}, .vertexC_UV = {1, 0}, .color = 0xFFFFFFFF},
+    {.a = 8, .b = 2, .c = 1, .vertexA_UV = {0, 1}, .vertexB_UV = {1, 0}, .vertexC_UV = {1, 1}, .color = 0xFFFFFFFF},
     // top
-    {.a = 2, .b = 7, .c = 5, .vertexA_UV = { 0, 1 }, .vertexB_UV = {0, 0}, .vertexC_UV = {1, 0}, .color = 0xFFFFFFFF},
-    {.a = 2, .b = 5, .c = 3, .vertexA_UV = { 0, 1 }, .vertexB_UV = {1, 0}, .vertexC_UV = {1, 1}, .color = 0xFFFFFFFF},
+    {.a = 2, .b = 7, .c = 5, .vertexA_UV = {0, 1}, .vertexB_UV = {0, 0}, .vertexC_UV = {1, 0}, .color = 0xFFFFFFFF},
+    {.a = 2, .b = 5, .c = 3, .vertexA_UV = {0, 1}, .vertexB_UV = {1, 0}, .vertexC_UV = {1, 1}, .color = 0xFFFFFFFF},
     // bottom
-    {.a = 6, .b = 8, .c = 1, .vertexA_UV = { 0, 1 }, .vertexB_UV = {0, 0}, .vertexC_UV = {1, 0}, .color = 0xFFFFFFFF},
-    {.a = 6, .b = 1, .c = 4, .vertexA_UV = { 0, 1 }, .vertexB_UV = {1, 0}, .vertexC_UV = {1, 1}, .color = 0xFFFFFFFF}
+    {.a = 6, .b = 8, .c = 1, .vertexA_UV = {0, 1}, .vertexB_UV = {0, 0}, .vertexC_UV = {1, 0}, .color = 0xFFFFFFFF},
+    {.a = 6, .b = 1, .c = 4, .vertexA_UV = {0, 1}, .vertexB_UV = {1, 0}, .vertexC_UV = {1, 1}, .color = 0xFFFFFFFF}
 };
 
 Mesh mesh = {
@@ -69,12 +69,20 @@ void loadOBJFileData(const char *fileName) {
     }
 
     char line[1024];
+    Texture2 *texCoordinates = NULL;
+
     while (fgets(line, sizeof(line), file)) {
         if (strncmp(line, "v ", 2) == 0) {
             Vec3 vertex;
             sscanf(line, "v %f %f %f", &vertex.x, &vertex.y, &vertex.z);
             array_push(mesh.vertices, vertex);
-        } else if (strncmp(line, "f ", 2) == 0) {
+        }
+        if (strncmp(line, "vt ", 3) == 0) {
+            Texture2 texCoord;
+            sscanf(line, "vt %f %f", &texCoord.u, &texCoord.v);
+            array_push(texCoordinates, texCoord);
+        }
+        if (strncmp(line, "f ", 2) == 0) {
             int vertexIndices[3];
             int textureIndices[3];
             int normalIndices[3];
@@ -86,15 +94,19 @@ void loadOBJFileData(const char *fileName) {
                 &vertexIndices[2], &textureIndices[2], &normalIndices[2]
             );
             const Face face = {
-                .a = vertexIndices[0],
-                .b = vertexIndices[1],
-                .c = vertexIndices[2],
+                .a = vertexIndices[0] - 1,
+                .b = vertexIndices[1] - 1,
+                .c = vertexIndices[2] - 1,
+                .vertexA_UV = texCoordinates[textureIndices[0] - 1],
+                .vertexB_UV = texCoordinates[textureIndices[1] - 1],
+                .vertexC_UV = texCoordinates[textureIndices[2] - 1],
                 .color = 0xFFFFFFFF,
             };
             array_push(mesh.faces, face);
         }
     }
 
+    array_free(texCoordinates);
     fclose(file);
 }
 

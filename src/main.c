@@ -54,10 +54,10 @@ void setup(void) {
 //    textureWidth = 64;
 //    textureHeight = 64;
 
-    // loadOBJFileData("../assets/cube.obj");
 //    loadOBJFileData("../assets/f22.obj");
-    loadCubeMeshData();
-    loadPNGTextureData("../assets/cube.png");
+//    loadCubeMeshData();
+    loadOBJFileData("../assets/crab.obj");
+    loadPNGTextureData("../assets/crab.png");
 }
 
 void processInput(void) {
@@ -117,9 +117,9 @@ void update(void) {
 
     if (!isPaused) {
         const float rotation = 0.005f;
-        mesh.rotation.x += rotation;
+//        mesh.rotation.x += rotation;
         mesh.rotation.y += rotation;
-        mesh.rotation.z += rotation;
+//        mesh.rotation.z += rotation;
 //        mesh.scale.x += 0.002f;
 //        mesh.scale.y += 0.002f;
 //        mesh.scale.z += 0.002f;
@@ -131,9 +131,9 @@ void update(void) {
     for (int i = 0; i < array_length(mesh.faces); i++) {
         const Face meshFace = mesh.faces[i];
         const Vec3 faceVertices[] = {
-            mesh.vertices[meshFace.a - 1],
-            mesh.vertices[meshFace.b - 1],
-            mesh.vertices[meshFace.c - 1],
+            mesh.vertices[meshFace.a],
+            mesh.vertices[meshFace.b],
+            mesh.vertices[meshFace.c],
         };
 
         Vec4 transformedVertices[3];
@@ -279,9 +279,27 @@ void render(void) {
 
         if (renderMethod == RENDER_WIRE_VERTEX) {
             const uint32_t dotColor = 0xFFFF0000;
-            drawRect(triangle.points[0].x - 3, triangle.points[0].y - 3, 6, 6, dotColor);
-            drawRect(triangle.points[1].x - 3, triangle.points[1].y - 3, 6, 6, dotColor);
-            drawRect(triangle.points[2].x - 3, triangle.points[2].y - 3, 6, 6, dotColor);
+            drawRect(
+                (int) triangle.points[0].x - 3,
+                (int) triangle.points[0].y - 3,
+                6,
+                6,
+                dotColor
+            );
+            drawRect(
+                (int) triangle.points[1].x - 3,
+                (int) triangle.points[1].y - 3,
+                6,
+                6,
+                dotColor
+            );
+            drawRect(
+                (int) triangle.points[2].x - 3,
+                (int) triangle.points[2].y - 3,
+                6,
+                6,
+                dotColor
+            );
         }
     }
 
@@ -298,6 +316,7 @@ void render(void) {
 void freeResources(void) {
     freeMesh();
     free(colorBuffer);
+    upng_free(pngTexture);
 }
 
 int main(void) {
