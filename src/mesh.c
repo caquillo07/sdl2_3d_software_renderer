@@ -10,34 +10,34 @@
 
 Vec3 cubeVertices[N_CUBE_VERTICES] = {
     {.x = -1, .y = -1, .z = -1}, // 1
-    {.x = -1, .y = 1, .z = -1},  // 2
-    {.x = 1, .y = 1, .z = -1},   // 3
-    {.x = 1, .y = -1, .z = -1},  // 4
-    {.x = 1, .y = 1, .z = 1},    // 5
-    {.x = 1, .y = -1, .z = 1},   // 6
-    {.x = -1, .y = 1, .z = 1},   // 7
-    {.x = -1, .y = -1, .z = 1}   // 8
+    {.x = -1, .y =  1, .z = -1}, // 2
+    {.x =  1, .y =  1, .z = -1}, // 3
+    {.x =  1, .y = -1, .z = -1}, // 4
+    {.x =  1, .y =  1, .z =  1}, // 5
+    {.x =  1, .y = -1, .z =  1}, // 6
+    {.x = -1, .y =  1, .z =  1}, // 7
+    {.x = -1, .y = -1, .z =  1}  // 8
 };
 
 Face cubeFaces[N_CUBE_FACES] = {
     // front
-    {.a = 1, .b = 2, .c = 3, .color = 0xFFFFFFFF},
-    {.a = 1, .b = 3, .c = 4, .color = 0xFFFFFFFF},
+    {.a = 1, .b = 2, .c = 3, .vertexA_UV = {0, 0}, .vertexB_UV = {0, 1}, .vertexC_UV = {1, 1}, .color = 0xFFFFFFFF},
+    {.a = 1, .b = 3, .c = 4, .vertexA_UV = {0, 0}, .vertexB_UV = {1, 1}, .vertexC_UV = {1, 0}, .color = 0xFFFFFFFF},
     // right
-    {.a = 4, .b = 3, .c = 5, .color = 0xFFFFFFFF},
-    {.a = 4, .b = 5, .c = 6, .color = 0xFFFFFFFF},
+    {.a = 4, .b = 3, .c = 5, .vertexA_UV = {0, 0}, .vertexB_UV = {0, 1}, .vertexC_UV = {1, 1}, .color = 0xFFFFFFFF},
+    {.a = 4, .b = 5, .c = 6, .vertexA_UV = {0, 0}, .vertexB_UV = {1, 1}, .vertexC_UV = {1, 0}, .color = 0xFFFFFFFF},
     // back
-    {.a = 6, .b = 5, .c = 7, .color = 0x0FFFFFFFF},
-    {.a = 6, .b = 7, .c = 8, .color = 0x0FFFFFFFF},
+    {.a = 6, .b = 5, .c = 7, .vertexA_UV = {0, 0}, .vertexB_UV = {0, 1}, .vertexC_UV = {1, 1}, .color = 0xFFFFFFFF},
+    {.a = 6, .b = 7, .c = 8, .vertexA_UV = {0, 0}, .vertexB_UV = {1, 1}, .vertexC_UV = {1, 0}, .color = 0xFFFFFFFF},
     // left
-    {.a = 8, .b = 7, .c = 2, .color = 0xFFFFFFFF},
-    {.a = 8, .b = 2, .c = 1, .color = 0xFFFFFFFF},
+    {.a = 8, .b = 7, .c = 2, .vertexA_UV = {0, 0}, .vertexB_UV = {0, 1}, .vertexC_UV = {1, 1}, .color = 0xFFFFFFFF},
+    {.a = 8, .b = 2, .c = 1, .vertexA_UV = {0, 0}, .vertexB_UV = {1, 1}, .vertexC_UV = {1, 0}, .color = 0xFFFFFFFF},
     // top
-    {.a = 2, .b = 7, .c = 5, .color = 0xFFFFFFFF},
-    {.a = 2, .b = 5, .c = 3, .color = 0xFFFFFFFF},
+    {.a = 2, .b = 7, .c = 5, .vertexA_UV = {0, 0}, .vertexB_UV = {0, 1}, .vertexC_UV = {1, 1}, .color = 0xFFFFFFFF},
+    {.a = 2, .b = 5, .c = 3, .vertexA_UV = {0, 0}, .vertexB_UV = {1, 1}, .vertexC_UV = {1, 0}, .color = 0xFFFFFFFF},
     // bottom
-    {.a = 6, .b = 8, .c = 1, .color = 0xFFFFFFFF},
-    {.a = 6, .b = 1, .c = 4, .color = 0xFFFFFFFF}
+    {.a = 6, .b = 8, .c = 1, .vertexA_UV = {0, 0}, .vertexB_UV = {0, 1}, .vertexC_UV = {1, 1}, .color = 0xFFFFFFFF},
+    {.a = 6, .b = 1, .c = 4, .vertexA_UV = {0, 0}, .vertexB_UV = {1, 1}, .vertexC_UV = {1, 0}, .color = 0xFFFFFFFF}
 };
 
 Mesh mesh = {
@@ -61,8 +61,8 @@ void loadCubeMeshData(void) {
     mesh.rotation.z = 0;
 }
 
-void loadOBJFileData(const char* fileName) {
-    FILE* file = fopen(fileName, "r");
+void loadOBJFileData(const char *fileName) {
+    FILE *file = fopen(fileName, "r");
     if (!file) {
         fprintf(stderr, "Error opening file: %s\n", fileName);
         exit(1);

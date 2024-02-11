@@ -25,6 +25,10 @@ add_executable(sdl2_software_renderer
         src/light.c
         src/light.h
         src/light.h
+        src/texture.c
+        src/texture.h
+        src/swap.c
+        src/swap.h
 )
 target_link_libraries(sdl2_software_renderer ${SDL2_LIBRARIES})
 

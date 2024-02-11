@@ -7,10 +7,11 @@
 #include "matrix.h"
 #include "mesh.h"
 #include "vector.h"
+#include "texture.h"
 
 #define nil NULL;
 
-Triangle* trianglesToRender = nil;
+Triangle *trianglesToRender = nil;
 Vec3 cameraPosition = {
     .x = 0,
     .y = 0,
@@ -27,7 +28,7 @@ void setup(void) {
     // Allocate the required memory in bytes to hold the color buffer
     renderMethod = RENDER_WIRE;
     cullMethod = CULL_BACKFACE;
-    colorBuffer = (uint32_t*) malloc(sizeof(uint32_t) * windowWidth * windowHeight);
+    colorBuffer = (uint32_t *) malloc(sizeof(uint32_t) * windowWidth * windowHeight);
 
     // // Creating a SDL texture that is used to display the color buffer
     colorBufferTexture = SDL_CreateTexture(
@@ -47,6 +48,11 @@ void setup(void) {
         100.0f
     );
 
+    // manually load the hardcoded texture data from the static array
+    meshTexture = (uint32_t *) REDBRICK_TEXTURE;
+    textureWidth = 64;
+    textureHeight = 64;
+
     // loadOBJFileData("../assets/cube.obj");
     loadOBJFileData("../assets/f22.obj");
 //    loadCubeMeshData();
@@ -57,7 +63,8 @@ void processInput(void) {
     SDL_PollEvent(&event);
 
     switch (event.type) {
-        case SDL_QUIT:isRunning = false;
+        case SDL_QUIT:
+            isRunning = false;
             break;
         case SDL_KEYDOWN:
             if (event.key.keysym.sym == SDLK_ESCAPE) {
@@ -75,6 +82,12 @@ void processInput(void) {
             if (event.key.keysym.sym == SDLK_4) {
                 renderMethod = RENDER_FILL_TRIANGLE_WIRE;
             }
+            if (event.key.keysym.sym == SDLK_5) {
+                renderMethod = RENDER_TEXTURED;
+            }
+            if (event.key.keysym.sym == SDLK_6) {
+                renderMethod = RENDER_TEXTURED_WIRE;
+            }
             if (event.key.keysym.sym == SDLK_c) {
                 cullMethod = CULL_BACKFACE;
             }
@@ -85,7 +98,8 @@ void processInput(void) {
                 isPaused = !isPaused;
             }
             break;
-        default: break;
+        default:
+            break;
     }
 }
 
@@ -102,8 +116,8 @@ void update(void) {
     if (!isPaused) {
         const float rotation = 0.005f;
         mesh.rotation.x += rotation;
-//        mesh.rotation.y += rotation;
-//        mesh.rotation.z += rotation;
+        mesh.rotation.y += rotation;
+        mesh.rotation.z += rotation;
 //        mesh.scale.x += 0.002f;
 //        mesh.scale.y += 0.002f;
 //        mesh.scale.z += 0.002f;
@@ -194,6 +208,11 @@ void update(void) {
                 {projectedPoints[1].x, projectedPoints[1].y},
                 {projectedPoints[2].x, projectedPoints[2].y},
             },
+            .textCoords = {
+                {meshFace.vertexA_UV.u, meshFace.vertexA_UV.v},
+                {meshFace.vertexB_UV.u, meshFace.vertexB_UV.v},
+                {meshFace.vertexC_UV.u, meshFace.vertexC_UV.v},
+            },
             .color = triangleColor,
             .avgDepth = avgDepth,
         };
@@ -222,33 +241,43 @@ void render(void) {
     // render the projected triangles
     const int numOfTriangles = array_length(trianglesToRender);
     for (int i = 0; i < numOfTriangles; i++) {
-        const Triangle t = trianglesToRender[i];
+        const Triangle triangle = trianglesToRender[i];
 
         if (renderMethod == RENDER_FILL_TRIANGLE || renderMethod == RENDER_FILL_TRIANGLE_WIRE) {
             drawFilledTriangle(
-                t.points[0].x, t.points[0].y,
-                t.points[1].x, t.points[1].y,
-                t.points[2].x, t.points[2].y,
-                t.color
+                triangle.points[0].x, triangle.points[0].y,
+                triangle.points[1].x, triangle.points[1].y,
+                triangle.points[2].x, triangle.points[2].y,
+                triangle.color
+            );
+        }
+
+        if (renderMethod == RENDER_TEXTURED || renderMethod == RENDER_TEXTURED_WIRE) {
+            drawTexturedTriangle(
+                triangle.points[0].x, triangle.points[0].y, triangle.textCoords[0].u, triangle.textCoords[0].v, // vertex A
+                triangle.points[1].x, triangle.points[1].y, triangle.textCoords[1].u, triangle.textCoords[1].v, // vertex B
+                triangle.points[2].x, triangle.points[2].y, triangle.textCoords[2].u, triangle.textCoords[2].v, // vertex C
+                meshTexture
             );
         }
 
         if (renderMethod == RENDER_WIRE ||
             renderMethod == RENDER_WIRE_VERTEX ||
-            renderMethod == RENDER_FILL_TRIANGLE_WIRE) {
+            renderMethod == RENDER_FILL_TRIANGLE_WIRE ||
+            renderMethod == RENDER_TEXTURED_WIRE) {
             drawTriangle(
-                t.points[0],
-                t.points[1],
-                t.points[2],
+                triangle.points[0],
+                triangle.points[1],
+                triangle.points[2],
                 0xFFFFFFF
             );
         }
 
         if (renderMethod == RENDER_WIRE_VERTEX) {
             const uint32_t dotColor = 0xFFFF0000;
-            drawRect(t.points[0].x - 3, t.points[0].y - 3, 6, 6, dotColor);
-            drawRect(t.points[1].x - 3, t.points[1].y - 3, 6, 6, dotColor);
-            drawRect(t.points[2].x - 3, t.points[2].y - 3, 6, 6, dotColor);
+            drawRect(triangle.points[0].x - 3, triangle.points[0].y - 3, 6, 6, dotColor);
+            drawRect(triangle.points[1].x - 3, triangle.points[1].y - 3, 6, 6, dotColor);
+            drawRect(triangle.points[2].x - 3, triangle.points[2].y - 3, 6, 6, dotColor);
         }
     }
 
