@@ -54,8 +54,8 @@ void setup(void) {
     textureHeight = 64;
 
     // loadOBJFileData("../assets/cube.obj");
-    loadOBJFileData("../assets/f22.obj");
-//    loadCubeMeshData();
+//    loadOBJFileData("../assets/f22.obj");
+    loadCubeMeshData();
 }
 
 void processInput(void) {
@@ -204,9 +204,9 @@ void update(void) {
 
         Triangle projectedTriangle = {
             .points = {
-                {projectedPoints[0].x, projectedPoints[0].y},
-                {projectedPoints[1].x, projectedPoints[1].y},
-                {projectedPoints[2].x, projectedPoints[2].y},
+                {projectedPoints[0].x, projectedPoints[0].y, projectedPoints[0].z, projectedPoints[0].w},
+                {projectedPoints[1].x, projectedPoints[1].y, projectedPoints[1].z, projectedPoints[1].w},
+                {projectedPoints[2].x, projectedPoints[2].y, projectedPoints[2].z, projectedPoints[2].w},
             },
             .textCoords = {
                 {meshFace.vertexA_UV.u, meshFace.vertexA_UV.v},
@@ -254,9 +254,12 @@ void render(void) {
 
         if (renderMethod == RENDER_TEXTURED || renderMethod == RENDER_TEXTURED_WIRE) {
             drawTexturedTriangle(
-                triangle.points[0].x, triangle.points[0].y, triangle.textCoords[0].u, triangle.textCoords[0].v, // vertex A
-                triangle.points[1].x, triangle.points[1].y, triangle.textCoords[1].u, triangle.textCoords[1].v, // vertex B
-                triangle.points[2].x, triangle.points[2].y, triangle.textCoords[2].u, triangle.textCoords[2].v, // vertex C
+                triangle.points[0].x, triangle.points[0].y, triangle.points[0].z, triangle.points[0].w,
+                triangle.textCoords[0].u, triangle.textCoords[0].v, // vertex A
+                triangle.points[1].x, triangle.points[1].y, triangle.points[1].z, triangle.points[1].w,
+                triangle.textCoords[1].u, triangle.textCoords[1].v, // vertex B
+                triangle.points[2].x, triangle.points[2].y, triangle.points[2].z, triangle.points[2].w,
+                triangle.textCoords[2].u, triangle.textCoords[2].v, // vertex C
                 meshTexture
             );
         }
@@ -265,12 +268,11 @@ void render(void) {
             renderMethod == RENDER_WIRE_VERTEX ||
             renderMethod == RENDER_FILL_TRIANGLE_WIRE ||
             renderMethod == RENDER_TEXTURED_WIRE) {
-            drawTriangle(
-                triangle.points[0],
-                triangle.points[1],
-                triangle.points[2],
-                0xFFFFFFF
-            );
+
+            Vec2 a = vec2_fromVec4(triangle.points[0]);
+            Vec2 b = vec2_fromVec4(triangle.points[1]);
+            Vec2 c = vec2_fromVec4(triangle.points[2]);
+            drawTriangle(a, b, c, 0xFFFFFFF);
         }
 
         if (renderMethod == RENDER_WIRE_VERTEX) {

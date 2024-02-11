@@ -8,6 +8,8 @@
 #include "swap.h"
 
 
+Vec2 vec2_fromVec4(Vec4 vec41);
+
 ///////////////////////////////////////////////////////////////////////////////
 // Draw a filled a triangle with a flat bottom
 ///////////////////////////////////////////////////////////////////////////////
@@ -122,22 +124,36 @@ void drawFilledTriangle(int x0, int y0, int x1, int y1, int x2, int y2, uint32_t
 
 void drawTexel(
     int x, int y, const uint32_t *texture,
-    Vec2 pointA, Vec2 pointB, Vec2 pointC,
-    float u0, float v0, float u1, float v1, float u2, float v2
+    Vec4 pointA, Vec4 pointB, Vec4 pointC,
+    Texture2 vertexA_UV, Texture2 vertexB_UV, Texture2 vertexC_UV
+    //float u0, float v0, float u1, float v1, float u2, float v2
 ) {
     Vec2 pointP = {.x = x, .y = y};
-    Vec3 weights = barycentricWeights(pointA, pointB, pointC, pointP);
+    Vec2 a = vec2_fromVec4(pointA);
+    Vec2 b = vec2_fromVec4(pointB);
+    Vec2 c = vec2_fromVec4(pointC);
+
+    Vec3 weights = barycentricWeights(a, b, c, pointP);
     float alpha = weights.x;
     float beta = weights.y;
     float gamma = weights.z;
 
-    // perform the interpolation of all UV values using the barycentric weights
-    float u = (u0 * alpha) + (u1 * beta) + (u2 * gamma);
-    float v = (v0 * alpha) + (v1 * beta) + (v2 * gamma);
+
+
+    // perform the interpolation of all U/2 and V/w values using the barycentric weights and a factor of 1/w
+    float interpolatedU = ((vertexA_UV.u / pointA.w) * alpha) + ((vertexB_UV.u / pointB.w) * beta) + ((vertexC_UV.u / pointC.w) * gamma);
+    float interpolatedV = ((vertexA_UV.v / pointA.w) * alpha) + ((vertexB_UV.v / pointB.w) * beta) + ((vertexC_UV.v / pointC.w) * gamma);
+
+    // in a real project, we could pass this in so its not calculated on each iteration.
+    // This would speed it up quite a bit since division is _slow_.
+    float interpolatedReciprocalW = (1 / pointA.w) * alpha + (1 / pointB.w) * beta + (1 / pointC.w) * gamma;
+
+    interpolatedU /= interpolatedReciprocalW;
+    interpolatedV /= interpolatedReciprocalW;
 
     // Map the UV coordinates to the texture
-    int textureX = abs((int) (u * textureWidth));
-    int textureY = abs((int) (v * textureHeight));
+    int textureX = abs((int) (interpolatedU * textureWidth));
+    int textureY = abs((int) (interpolatedV * textureHeight));
 
     uint32_t texelIndex = (textureY * textureWidth) + textureX;
     if (texelIndex >= textureWidth * textureHeight) {
@@ -147,9 +163,9 @@ void drawTexel(
 }
 
 void drawTexturedTriangle(
-    int x0, int y0, float u0, float v0,
-    int x1, int y1, float u1, float v1,
-    int x2, int y2, float u2, float v2,
+    int x0, int y0, float z0, float w0, float u0, float v0,
+    int x1, int y1, float z1, float w1, float u1, float v1,
+    int x2, int y2, float z2, float w2, float u2, float v2,
     uint32_t *texture
 ) {
     // sort the vertices by y-coordinates ascending (y0 < y1 < y2).
@@ -158,24 +174,33 @@ void drawTexturedTriangle(
         intSwap(&x0, &x1);
         floatSwap(&u0, &u1);
         floatSwap(&v0, &v1);
+        floatSwap(&z0, &z1);
+        floatSwap(&w0, &w1);
     }
     if (y1 > y2) {
         intSwap(&y1, &y2);
         intSwap(&x1, &x2);
         floatSwap(&u1, &u2);
         floatSwap(&v1, &v2);
+        floatSwap(&z1, &z2);
+        floatSwap(&w1, &w2);
     }
     if (y0 > y1) {
         intSwap(&y0, &y1);
         intSwap(&x0, &x1);
         floatSwap(&u0, &u1);
         floatSwap(&v0, &v1);
+        floatSwap(&z0, &z1);
+        floatSwap(&w0, &w1);
     }
 
     // create vector points after we sort the vertices
-    Vec2 pointA = {.x = x0, .y = y0};
-    Vec2 pointB = {.x = x1, .y = y1};
-    Vec2 pointC = {.x = x2, .y = y2};
+    Vec4 pointA = {.x = x0, .y = y0, .z = z0, .w = w0};
+    Vec4 pointB = {.x = x1, .y = y1, .z = z1, .w = w1};
+    Vec4 pointC = {.x = x2, .y = y2, .z = z2, .w = w2};
+    Texture2 vertexA_UV = {.u = u0, .v = v0};
+    Texture2 vertexB_UV = {.u = u1, .v = v1};
+    Texture2 vertexC_UV = {.u = u2, .v = v2};
 
     // fill up the top half of the triangle
     float inverseSlope1 = 0;
@@ -195,7 +220,7 @@ void drawTexturedTriangle(
             }
 
             for (int x = (int) xStart; x < (int) xEnd; x++) {
-                drawTexel(x, y, texture, pointA, pointB, pointC, u0, v0, u1, v1, u2, v2);
+                drawTexel(x, y, texture, pointA, pointB, pointC, vertexA_UV, vertexB_UV, vertexC_UV);
             }
         }
     }
@@ -218,7 +243,7 @@ void drawTexturedTriangle(
             }
 
             for (int x = (int) xStart; x < (int) xEnd; x++) {
-                drawTexel(x, y, texture, pointA, pointB, pointC, u0, v0, u1, v1, u2, v2);
+                drawTexel(x, y, texture, pointA, pointB, pointC, vertexA_UV, vertexB_UV, vertexC_UV);
             }
         }
     }

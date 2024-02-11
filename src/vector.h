@@ -31,6 +31,7 @@ void vec2_normalize(Vec2 *v);
 float vec2_dot(Vec2 v1, Vec2 v2);
 float vec2_length(Vec2 v);
 
+
 Vec3 vec3_add(Vec3 v1, Vec3 v2);
 Vec3 vec3_sub(Vec3 v1, Vec3 v2);
 Vec3 vec3_mul(Vec3 v1, float factor);
@@ -46,5 +47,6 @@ Vec3 vec3_rotateZ(Vec3 v, float angle);
 
 Vec4 vec4_fromVec3(Vec3 v);
 Vec3 vec3_fromVec4(Vec4 v);
+Vec2 vec2_fromVec4(Vec4 vec41);
 
 #endif //VECTOR_H

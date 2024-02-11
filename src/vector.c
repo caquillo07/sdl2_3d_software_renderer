@@ -137,3 +137,8 @@ Vec3 vec3_fromVec4(Vec4 v) {
     Vec3 result = { v.x, v.y, v.z };
     return result;
 }
+
+Vec2 vec2_fromVec4(Vec4 v) {
+    Vec2 result = { v.x, v.y };
+    return result;
+}
