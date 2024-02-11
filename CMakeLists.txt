@@ -29,6 +29,8 @@ add_executable(sdl2_software_renderer
         src/texture.h
         src/swap.c
         src/swap.h
+        src/upng.c
+        src/upng.h
 )
 target_link_libraries(sdl2_software_renderer ${SDL2_LIBRARIES})
 

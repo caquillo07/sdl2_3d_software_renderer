@@ -1,6 +1,7 @@
 #include <stdbool.h>
 #include <SDL2/SDL.h>
 
+#include "upng.h"
 #include "array.h"
 #include "display.h"
 #include "light.h"
@@ -33,7 +34,7 @@ void setup(void) {
     // // Creating a SDL texture that is used to display the color buffer
     colorBufferTexture = SDL_CreateTexture(
         renderer,
-        SDL_PIXELFORMAT_ARGB8888,
+        SDL_PIXELFORMAT_RGBA32,
         SDL_TEXTUREACCESS_STREAMING,
         windowWidth,
         windowHeight
@@ -49,13 +50,14 @@ void setup(void) {
     );
 
     // manually load the hardcoded texture data from the static array
-    meshTexture = (uint32_t *) REDBRICK_TEXTURE;
-    textureWidth = 64;
-    textureHeight = 64;
+//    meshTexture = (uint32_t *) REDBRICK_TEXTURE;
+//    textureWidth = 64;
+//    textureHeight = 64;
 
     // loadOBJFileData("../assets/cube.obj");
 //    loadOBJFileData("../assets/f22.obj");
     loadCubeMeshData();
+    loadPNGTextureData("../assets/cube.png");
 }
 
 void processInput(void) {

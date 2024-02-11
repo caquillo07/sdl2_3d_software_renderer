@@ -6,6 +6,7 @@
 #define SDL2_SOFTWARE_RENDERER_TEXTURE_H
 
 #include <stdint.h>
+#include "upng.h"
 
 typedef struct {
     float u;
@@ -14,8 +15,12 @@ typedef struct {
 
 extern int textureWidth;
 extern int textureHeight;
+
+extern upng_t* pngTexture;
 extern uint32_t* meshTexture;
 
 extern const uint8_t REDBRICK_TEXTURE[];
+
+void loadPNGTextureData(const char *fileName);
 
 #endif //SDL2_SOFTWARE_RENDERER_TEXTURE_H
