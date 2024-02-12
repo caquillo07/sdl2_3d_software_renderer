@@ -85,11 +85,32 @@ void processInput(void) {
             if (event.key.keysym.sym == SDLK_c) {
                 cullMethod = CULL_BACKFACE;
             }
-            if (event.key.keysym.sym == SDLK_d) {
+            if (event.key.keysym.sym == SDLK_x) {
                 cullMethod = CULL_NONE;
             }
             if (event.key.keysym.sym == SDLK_SPACE) {
                 isPaused = !isPaused;
+            }
+            if (event.key.keysym.sym == SDLK_UP) {
+                camera.position.y += 3.0f * deltaTime;
+            }
+            if (event.key.keysym.sym == SDLK_DOWN) {
+                camera.position.y -= 3.0f * deltaTime;
+            }
+
+            if (event.key.keysym.sym == SDLK_w) {
+                camera.forwardVelocity = vec3_mul(camera.direction, 15.0f * deltaTime);
+                camera.position = vec3_add(camera.position, camera.forwardVelocity);
+            }
+            if (event.key.keysym.sym == SDLK_s) {
+                camera.forwardVelocity = vec3_mul(camera.direction, 15.0f * deltaTime);
+                camera.position = vec3_sub(camera.position, camera.forwardVelocity);
+            }
+            if (event.key.keysym.sym == SDLK_a) {
+                camera.yawAngle += 1.0f * deltaTime;
+            }
+            if (event.key.keysym.sym == SDLK_d) {
+                camera.yawAngle -= 1.0f * deltaTime;
             }
             break;
         default:
@@ -122,18 +143,20 @@ void update(void) {
 //        mesh.scale.x += 0.002f;
 //        mesh.scale.y += 0.002f;
 //        mesh.scale.z += 0.002f;
-        mesh.translation.x += 1 * deltaTime;
+//        mesh.translation.x += 1 * deltaTime;
 //        mesh.translation.y += 0.002f;
         mesh.translation.z = 5.0f;
-
-        // change the camera position per frame
-        camera.position.x += 0.05f * deltaTime;
-        camera.position.y += 0.05f * deltaTime;
     }
 
     // create the view matrix
-    Vec3 target = {0, 0, 5};
     Vec3 upDuration = {0, 1, 0};
+    Vec3 target = {0, 0, 1};
+    Mat4 cameraYawRotation = mat4_makeRotationY(camera.yawAngle);
+    camera.direction = vec3_fromVec4(mat4_mulVec4(cameraYawRotation, vec4_fromVec3(target)));
+
+    // offset the camera position in the direction where the camera is pointing at
+    target = vec3_add(camera.position, camera.direction);
+
     Mat4 viewMatrix = mat4_lookAt(camera.position, target, upDuration);
 
     for (int i = 0; i < array_length(mesh.faces); i++) {
