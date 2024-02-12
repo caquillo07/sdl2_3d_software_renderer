@@ -8,65 +8,6 @@
 #include "swap.h"
 
 
-Vec2 vec2_fromVec4(Vec4 vec41);
-
-///////////////////////////////////////////////////////////////////////////////
-// Draw a filled a triangle with a flat bottom
-///////////////////////////////////////////////////////////////////////////////
-//
-//        (x0,y0)
-//          / \
-//         /   \
-//        /     \
-//       /       \
-//      /         \
-//  (x1,y1)------(x2,y2)
-//
-///////////////////////////////////////////////////////////////////////////////
-void fillFlatBottomTriangle(int x0, int y0, int x1, int y1, int x2, int y2, uint32_t color) {
-    // find the two slopes from the two triangle legs
-    // because we are changing in Y, we need to see how much X is changing. Because
-    // of this, we need the inverse of the slope instead.
-    const float inverseSlope1 = (float) (x1 - x0) / (float) (y1 - y0);
-    const float inverseSlope2 = (float) (x2 - x0) / (float) (y2 - y0);
-
-    // xStart and xEnd from the top vertex (x0,y0);
-    float xStart = (float) x0;
-    float xEnd = (float) x0;
-    for (int y = y0; y < y2; y++) {
-        drawLine((int) xStart, y, (int) xEnd, y, color);
-        xStart += inverseSlope1;
-        xEnd += inverseSlope2;
-    }
-}
-
-///////////////////////////////////////////////////////////////////////////////
-// Draw a filled a triangle with a flat top
-///////////////////////////////////////////////////////////////////////////////
-//
-//  (x0,y0)------(x1,y1)
-//      \         /
-//       \       /
-//        \     /
-//         \   /
-//          \ /
-//        (x2,y2)
-//
-///////////////////////////////////////////////////////////////////////////////
-void fillFlatTopTriangle(int x0, int y0, int x1, int y1, int x2, int y2, uint32_t color) {
-    // x2,y2 are the bottom tip of the triangle, we should draw upwards?
-    const float inverseSlope1 = (float) (x0 - x2) / (float) (y0 - y2);
-    const float inverseSlope2 = (float) (x1 - x2) / (float) (y1 - y2);
-
-    float xStart = (float) x2;
-    float xEnd = (float) x2;
-    for (int y = y2; y >= y0; y--) {
-        drawLine((int) xStart, y, (int) xEnd, y, color);
-        xStart -= inverseSlope1;
-        xEnd -= inverseSlope2;
-    }
-}
-
 ///////////////////////////////////////////////////////////////////////////////
 // Draw a filled triangle with the flat-top/flat-bottom method
 // We split the original triangle in two, half flat-bottom and half flat-top
@@ -90,37 +31,128 @@ void fillFlatTopTriangle(int x0, int y0, int x1, int y1, int x2, int y2, uint32_
 //                         (x2,y2)
 //
 ///////////////////////////////////////////////////////////////////////////////
-void drawFilledTriangle(int x0, int y0, int x1, int y1, int x2, int y2, uint32_t color) {
-    // sort the vertices by y-coordinates ascending (y0 < y1 < y2).
+void drawFilledTriangle(
+    int x0, int y0, float z0, float w0,
+    int x1, int y1, float z1, float w1,
+    int x2, int y2, float z2, float w2,
+    uint32_t color
+) {
+    // We need to sort the vertices by y-coordinate ascending (y0 < y1 < y2)
     if (y0 > y1) {
         intSwap(&y0, &y1);
         intSwap(&x0, &x1);
+        floatSwap(&z0, &z1);
+        floatSwap(&w0, &w1);
     }
     if (y1 > y2) {
         intSwap(&y1, &y2);
         intSwap(&x1, &x2);
+        floatSwap(&z1, &z2);
+        floatSwap(&w1, &w2);
     }
     if (y0 > y1) {
         intSwap(&y0, &y1);
         intSwap(&x0, &x1);
+        floatSwap(&z0, &z1);
+        floatSwap(&w0, &w1);
     }
 
-    if (y1 == y2) {
-        // we can just draw this one
-        fillFlatBottomTriangle(x0, y0, x1, y1, x2, y2, color);
-    } else if (y0 == y1) {
-        fillFlatTopTriangle(x0, y0, x1, y1, x2, y2, color);
-    } else {
-        // calculate the new vertex (Mx, My) using the triangle similarity
-        const int My = y1;
-        const int Mx = (float) ((x2 - x0) * (y1 - y0)) / (float) (y2 - y0) + x0; // NOLINT(*-narrowing-conversions)
+    // Create three vector points after we sort the vertices
+    Vec4 pointA = {x0, y0, z0, w0};
+    Vec4 pointB = {x1, y1, z1, w1};
+    Vec4 pointC = {x2, y2, z2, w2};
 
-        // draw flat-bottom triangle
-        fillFlatBottomTriangle(x0, y0, x1, y1, Mx, My, color);
-        // draw flat-top triangle
-        fillFlatTopTriangle(x1, y1, Mx, My, x2, y2, color);
+    ///////////////////////////////////////////////////////
+    // Render the upper part of the triangle (flat-bottom)
+    ///////////////////////////////////////////////////////
+    float invSlope1 = 0;
+    float invSlope2 = 0;
+
+    if (y1 - y0 != 0) {
+        invSlope1 = (float) (x1 - x0) / abs(y1 - y0);
+    }
+    if (y2 - y0 != 0) {
+        invSlope2 = (float) (x2 - x0) / abs(y2 - y0);
+    }
+
+    if (y1 - y0 != 0) {
+        for (int y = y0; y <= y1; y++) {
+            int x_start = x1 + (y - y1) * invSlope1;
+            int x_end = x0 + (y - y0) * invSlope2;
+
+            if (x_end < x_start) {
+                intSwap(&x_start, &x_end); // swap if x_start is to the right of x_end
+            }
+
+            for (int x = x_start; x < x_end; x++) {
+                // Draw our pixel with a solid color
+                drawTrianglePixel(x, y, color, pointA, pointB, pointC);
+            }
+        }
+    }
+
+    ///////////////////////////////////////////////////////
+    // Render the bottom part of the triangle (flat-top)
+    ///////////////////////////////////////////////////////
+    invSlope1 = 0;
+    invSlope2 = 0;
+
+    if (y2 - y1 != 0) invSlope1 = (float) (x2 - x1) / abs(y2 - y1);
+    if (y2 - y0 != 0) invSlope2 = (float) (x2 - x0) / abs(y2 - y0);
+
+    if (y2 - y1 != 0) {
+        for (int y = y1; y <= y2; y++) {
+            int xStart = x1 + (y - y1) * invSlope1;
+            int xEnd = x0 + (y - y0) * invSlope2;
+
+            if (xEnd < xStart) {
+                intSwap(&xStart, &xEnd); // swap if x_start is to the right of x_end
+            }
+
+            for (int x = xStart; x < xEnd; x++) {
+                // Draw our pixel with a solid color
+                drawTrianglePixel(x, y, color, pointA, pointB, pointC);
+            }
+        }
     }
 }
+
+///////////////////////////////////////////////////////////////////////////////
+// Function to draw a solid pixel at position (x,y) using depth interpolation
+///////////////////////////////////////////////////////////////////////////////
+void drawTrianglePixel(
+    int x, int y, uint32_t color,
+    Vec4 pointA, Vec4 pointB, Vec4 pointC
+) {
+    // Create three vec2 to find the interpolation
+    Vec2 p = {x, y};
+    Vec2 a = vec2_fromVec4(pointA);
+    Vec2 b = vec2_fromVec4(pointB);
+    Vec2 c = vec2_fromVec4(pointC);
+
+    // Calculate the barycentric coordinates of our point 'p' inside the triangle
+    Vec3 weights = barycentricWeights(a, b, c, p);
+
+    float alpha = weights.x;
+    float beta = weights.y;
+    float gamma = weights.z;
+
+    // Interpolate the value of 1/w for the current pixel
+    float interpolated_reciprocal_w = (1 / pointA.w) * alpha + (1 / pointB.w) * beta + (1 / pointC.w) * gamma;
+
+    // Adjust 1/w so the pixels that are closer to the camera have smaller values
+    interpolated_reciprocal_w = 1.0 - interpolated_reciprocal_w;
+
+    // Only draw the pixel if the depth value is less than the one previously stored in the z-buffer
+    if (interpolated_reciprocal_w < zBuffer[(windowWidth * y) + x]) {
+        // Draw a pixel at position (x,y) with a solid color
+        drawPixel(x, y, color);
+
+        // Update the z-buffer value with the 1/w of this current pixel
+        zBuffer[(windowWidth * y) + x] = interpolated_reciprocal_w;
+    }
+}
+
 
 void drawTexel(
     int x, int y, const uint32_t *texture,
@@ -137,8 +169,6 @@ void drawTexel(
     float alpha = weights.x;
     float beta = weights.y;
     float gamma = weights.z;
-
-
 
     // perform the interpolation of all U/2 and V/w values using the barycentric weights and a factor of 1/w
     float interpolatedU = ((vertexA_UV.u / pointA.w) * alpha) +
@@ -163,11 +193,24 @@ void drawTexel(
     int textureY = abs((int) (interpolatedV * textureHeight)) % textureHeight;
 
     uint32_t texelIndex = (textureY * textureWidth) + textureX;
+    // make sure we don't go out of bounds
     if (texelIndex >= textureWidth * textureHeight) {
         printf("Texel index out of bounds: %d\n", texelIndex);
         return;
     }
-    drawPixel(x, y, texture[texelIndex]);
+
+    // only draw the pixel if the depth value is less than the one previously stored
+    // in the z-buffer
+
+    // adjust 1/w so the pixels that are closer to the camera have smaller values
+    interpolatedReciprocalW = 1.f - interpolatedReciprocalW;
+    uint32_t zBufferIndex = (windowWidth * y) + x;
+    if (interpolatedReciprocalW < zBuffer[zBufferIndex]) {
+        drawPixel(x, y, texture[texelIndex]);
+
+        // update z-buffer with 1/w of this current pixel
+        zBuffer[zBufferIndex] = interpolatedReciprocalW;
+    }
 }
 
 void drawTexturedTriangle(

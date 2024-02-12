@@ -1,11 +1,12 @@
 #include "display.h"
 
-SDL_Window* window              = NULL;
-SDL_Renderer* renderer          = NULL;
-uint32_t* colorBuffer           = NULL;
-SDL_Texture* colorBufferTexture = NULL;
-int windowWidth                 = 800;
-int windowHeight                = 600;
+SDL_Window *window = NULL;
+SDL_Renderer *renderer = NULL;
+uint32_t *colorBuffer = NULL;
+float *zBuffer = NULL;
+SDL_Texture *colorBufferTexture = NULL;
+int windowWidth = 800;
+int windowHeight = 600;
 
 bool initializeWindow(void) {
     if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
@@ -16,7 +17,7 @@ bool initializeWindow(void) {
     // Set width and height of the SDL window with the max screen resolution
     SDL_DisplayMode displayMode;
     SDL_GetCurrentDisplayMode(0, &displayMode);
-    windowWidth  = displayMode.w;
+    windowWidth = displayMode.w;
     windowHeight = displayMode.h;
 
     // Create a SDL Window
@@ -71,9 +72,9 @@ void drawLine(const int x0, const int y0, const int x1, const int y1, const uint
     const int deltaX = x1 - x0;
     const int deltaY = y1 - y0;
 
-    const int sideLength   = abs(deltaX) >= abs(deltaY) ? abs(deltaX) : abs(deltaY);
-    const float xIncrement = deltaX / (float)sideLength;
-    const float yIncrement = deltaY / (float)sideLength;
+    const int sideLength = abs(deltaX) >= abs(deltaY) ? abs(deltaX) : abs(deltaY);
+    const float xIncrement = deltaX / (float) sideLength;
+    const float yIncrement = deltaY / (float) sideLength;
 
     float currentX = x0;
     float currentY = y0;
@@ -109,6 +110,15 @@ void clearColorBuffer(const uint32_t color) {
     for (int y = 0; y < windowHeight; y++) {
         for (int x = 0; x < windowWidth; x++) {
             colorBuffer[(windowWidth * y) + x] = color;
+        }
+    }
+}
+
+void clearZBuffer(void) {
+    for (int y = 0; y < windowHeight; y++) {
+        for (int x = 0; x < windowWidth; x++) {
+            // we have a left-handed coordinate system, so the zBuffer is filled with 1s
+            zBuffer[(windowWidth * y) + x] = 1.f; // 1 is the farthest point in the zBuffer
         }
     }
 }

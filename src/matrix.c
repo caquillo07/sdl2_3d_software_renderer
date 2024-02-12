@@ -164,3 +164,22 @@ Vec4 mat4_mulVec4Project(Mat4 m, Vec4 v) {
     }
     return result;
 }
+
+Mat4 mat4_lookAt(Vec3 eye, Vec3 target, Vec3 up) {
+    Vec3 z = vec3_sub(target, eye);
+    vec3_normalize(&z);
+    Vec3 x = vec3_cross(up, z);
+    vec3_normalize(&x);
+    Vec3 y = vec3_cross(z, x);
+
+    Mat4 viewMatrix = {
+        .m = {
+            {x.x, x.y, x.z, -vec3_dot(x, eye)},
+            {y.x, y.y, y.z, -vec3_dot(y, eye)},
+            {z.x, z.y, z.z, -vec3_dot(z, eye)},
+            {0, 0, 0, 1}
+        }
+    };
+
+    return viewMatrix;
+}

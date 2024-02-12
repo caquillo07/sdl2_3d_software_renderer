@@ -9,15 +9,13 @@
 #include "mesh.h"
 #include "vector.h"
 #include "texture.h"
+#include "camera.h"
 
-#define nil NULL;
+#define MAX_TRIANGLES 10000
+Triangle trianglesToRender[MAX_TRIANGLES];
+int numTrianglesToRender = 0;
+float deltaTime = 0.0f;
 
-Triangle *trianglesToRender = nil;
-Vec3 cameraPosition = {
-    .x = 0,
-    .y = 0,
-    .z = 0,
-};
 Mat4 projectionMatrix;
 
 Uint32 previousFrameTime = 0;
@@ -27,9 +25,10 @@ bool isPaused = false;
 
 void setup(void) {
     // Allocate the required memory in bytes to hold the color buffer
-    renderMethod = RENDER_WIRE;
+    renderMethod = RENDER_TEXTURED;
     cullMethod = CULL_BACKFACE;
     colorBuffer = (uint32_t *) malloc(sizeof(uint32_t) * windowWidth * windowHeight);
+    zBuffer = (float *) malloc(sizeof(float) * windowWidth * windowHeight);
 
     // // Creating a SDL texture that is used to display the color buffer
     colorBufferTexture = SDL_CreateTexture(
@@ -49,15 +48,8 @@ void setup(void) {
         100.0f
     );
 
-    // manually load the hardcoded texture data from the static array
-//    meshTexture = (uint32_t *) REDBRICK_TEXTURE;
-//    textureWidth = 64;
-//    textureHeight = 64;
-
-//    loadOBJFileData("../assets/f22.obj");
-//    loadCubeMeshData();
-    loadOBJFileData("../assets/crab.obj");
-    loadPNGTextureData("../assets/crab.png");
+    loadOBJFileData("../assets/drone.obj");
+    loadPNGTextureData("../assets/drone.png");
 }
 
 void processInput(void) {
@@ -110,23 +102,39 @@ void update(void) {
     if (timeToWait > 0 && timeToWait <= FRAME_TARGET_TIME) {
         SDL_Delay(timeToWait);
     }
+    // get the delta time in seconds
+    deltaTime = (SDL_GetTicks() - previousFrameTime) / 1000.0f;
+
+    // calculate the fps
+    const float fps = 1.0f / deltaTime;
+    printf("FPS: %f\n", fps);
+
     previousFrameTime = SDL_GetTicks();
 
-    // each update init the triangles to render, todo(hector) - dont do this
-    trianglesToRender = nil;
+    // reset the number of triangles to render for the current frame
+    numTrianglesToRender = 0;
 
     if (!isPaused) {
-        const float rotation = 0.005f;
-//        mesh.rotation.x += rotation;
-        mesh.rotation.y += rotation;
-//        mesh.rotation.z += rotation;
+        const float rotation = 0.5f;
+//        mesh.rotation.x += rotation * deltaTime;
+//        mesh.rotation.y += rotation * deltaTime;
+//        mesh.rotation.z += rotation * deltaTime;
 //        mesh.scale.x += 0.002f;
 //        mesh.scale.y += 0.002f;
 //        mesh.scale.z += 0.002f;
-//        mesh.translation.x += 0.008f;
+        mesh.translation.x += 1 * deltaTime;
 //        mesh.translation.y += 0.002f;
-        mesh.translation.z = 5.f;
+        mesh.translation.z = 5.0f;
+
+        // change the camera position per frame
+        camera.position.x += 0.05f * deltaTime;
+        camera.position.y += 0.05f * deltaTime;
     }
+
+    // create the view matrix
+    Vec3 target = {0, 0, 5};
+    Vec3 upDuration = {0, 1, 0};
+    Mat4 viewMatrix = mat4_lookAt(camera.position, target, upDuration);
 
     for (int i = 0; i < array_length(mesh.faces); i++) {
         const Face meshFace = mesh.faces[i];
@@ -141,6 +149,9 @@ void update(void) {
             Vec4 transformedVertex = vec4_fromVec3(faceVertices[j]);
             Mat4 worldMatrix = mat4_makeWorld(mesh.translation, mesh.rotation, mesh.scale);
             transformedVertex = mat4_mulVec4(worldMatrix, transformedVertex);
+
+            // transform the vertex using the view matrix
+            transformedVertex = mat4_mulVec4(viewMatrix, transformedVertex);
 
             transformedVertices[j] = transformedVertex;
         }
@@ -165,8 +176,9 @@ void update(void) {
         // normalize the normal
         vec3_normalize(&normal);
 
+        Vec3 origin = {0, 0, 0};
         // find the vector between a point in the triangle and the camera origin
-        const Vec3 cameraRay = vec3_sub(cameraPosition, vectorA);
+        const Vec3 cameraRay = vec3_sub(origin, vectorA);
 
         if (cullMethod == CULL_BACKFACE) {
             // check if this triangle is aligned with the screen
@@ -192,10 +204,6 @@ void update(void) {
             projectedPoints[j].y += (float) windowHeight / 2.0f;
         }
 
-        // calculate the average depth of each face based on the vertices after
-        // the transformations
-        float avgDepth = (transformedVertices[0].z + transformedVertices[1].z + transformedVertices[2].z) / 3;
-
         // Calculate the shade of the triangle based on the direction of the light
         // and the normal of the face.
         // we need the inverse of the normal to calculate the light intensity because
@@ -216,22 +224,11 @@ void update(void) {
                 {meshFace.vertexC_UV.u, meshFace.vertexC_UV.v},
             },
             .color = triangleColor,
-            .avgDepth = avgDepth,
         };
 
-        array_push(trianglesToRender, projectedTriangle);
-    }
-
-    // bubble sort the triangles to render their avgDepth.
-    // slow but meh, this is a demo any ways
-    int numTriangles = array_length(trianglesToRender);
-    for (int i = 0; i < numTriangles; ++i) {
-        for (int j = i; j < numTriangles; ++j) {
-            if (trianglesToRender[i].avgDepth < trianglesToRender[j].avgDepth) {
-                Triangle tmp = trianglesToRender[i];
-                trianglesToRender[i] = trianglesToRender[j];
-                trianglesToRender[j] = tmp;
-            }
+        if (numTrianglesToRender < MAX_TRIANGLES) {
+            trianglesToRender[numTrianglesToRender] = projectedTriangle;
+            numTrianglesToRender++;
         }
     }
 }
@@ -241,15 +238,14 @@ void render(void) {
 
     // Loop all projected triangles and render them
     // render the projected triangles
-    const int numOfTriangles = array_length(trianglesToRender);
-    for (int i = 0; i < numOfTriangles; i++) {
+    for (int i = 0; i < numTrianglesToRender; i++) {
         const Triangle triangle = trianglesToRender[i];
 
         if (renderMethod == RENDER_FILL_TRIANGLE || renderMethod == RENDER_FILL_TRIANGLE_WIRE) {
             drawFilledTriangle(
-                triangle.points[0].x, triangle.points[0].y,
-                triangle.points[1].x, triangle.points[1].y,
-                triangle.points[2].x, triangle.points[2].y,
+                triangle.points[0].x, triangle.points[0].y, triangle.points[0].z, triangle.points[0].w, // vertex A
+                triangle.points[1].x, triangle.points[1].y, triangle.points[1].z, triangle.points[1].w, // vertex B
+                triangle.points[2].x, triangle.points[2].y, triangle.points[2].z, triangle.points[2].w, // vertex C
                 triangle.color
             );
         }
@@ -303,12 +299,9 @@ void render(void) {
         }
     }
 
-    drawFilledTriangle(300, 300, 200, 500, 500, 700, 0xFF00FF00);
-
-    // clear triangles - todo - dont do this
-    array_free(trianglesToRender);
     renderColorBuffer();
     clearColorBuffer(0xFF000000);
+    clearZBuffer();
 
     SDL_RenderPresent(renderer);
 }
@@ -316,6 +309,7 @@ void render(void) {
 void freeResources(void) {
     freeMesh();
     free(colorBuffer);
+    free(zBuffer);
     upng_free(pngTexture);
 }
 

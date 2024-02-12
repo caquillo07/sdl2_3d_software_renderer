@@ -9,8 +9,11 @@
 
 typedef struct {
     Vec3 position;
-    Vec3 rotation;
-    float fovAngle;
+    Vec3 direction;
+    Vec3 forwardVelocity;
+    float yawAngle;
 } Camera;
+
+extern Camera camera;
 
 #endif //CAMERA_H

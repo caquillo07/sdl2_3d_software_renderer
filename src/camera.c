@@ -3,3 +3,12 @@
 //
 
 #include "camera.h"
+
+Camera camera = {
+    .position = {
+        .x = 0,
+        .y = 0,
+        .z = 0,
+    },
+    .direction = {0, 0, 1},
+};
