@@ -31,7 +31,7 @@ typedef struct {
     int numVertices;
 } Polygon;
 
-void initFrustumPlanes(float fov, float zNear, float zFar);
+void initFrustumPlanes(float fovX, float fovY, float zNear, float zFar);
 
 Polygon createPolygonFromTriangle(Vec3 vec1, Vec3 vec2, Vec3 vec3);
 

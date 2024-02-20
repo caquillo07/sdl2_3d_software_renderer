@@ -44,14 +44,16 @@ void setup(void) {
 //    SDL_SetRelativeMouseMode(SDL_TRUE);
 
     // init perspective projection matrix
-    const float fov = M_PI / 3.0f;  // the same as 180/3, or 60 degrees
-    const float aspect = (float) windowHeight / (float) windowWidth;
-    const float zNear = 0.1f;
-    const float zFar = 100.0f;
-    projectionMatrix = mat4_makePerspective(fov, aspect, zNear, zFar);
+    const float aspectX = (float) windowWidth / (float) windowHeight;
+    const float aspectY = (float) windowHeight / (float) windowWidth;
+    const float fovY = M_PI / 3.0f;  // the same as 180/3, or 60 degrees
+    const float fovX = 2.0f * atanf(tanf(fovY / 2.0f) * aspectX);
+    const float zNear = 1.f;
+    const float zFar = 20.0f;
+    projectionMatrix = mat4_makePerspective(fovY, aspectY, zNear, zFar);
 
     // init the frustum planes
-    initFrustumPlanes(fov, zNear, zFar);
+    initFrustumPlanes(fovX, fovY, zNear, zFar);
 
     loadOBJFileData("../assets/cube.obj");
     loadPNGTextureData("../assets/cube.png");

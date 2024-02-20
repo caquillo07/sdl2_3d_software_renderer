@@ -13,7 +13,7 @@ Plane frustumPlanes[NUM_FRUSTUM_PLANES];
 ///////////////////////////////////////////////////////////////////////////////
 // Near plane   :  P=(0, 0, znear), N=(0, 0,  1)
 // Far plane    :  P=(0, 0, zfar),  N=(0, 0, -1)
-// Top plane    :  P=(0, 0, 0),     N=(0, -cos(fov/2), sin(fov/2))
+// Top plane    :  P=(0, 0, 0),     N=(0, -cos(fovX/2), sin(fov/2))
 // Bottom plane :  P=(0, 0, 0),     N=(0, cos(fov/2), sin(fov/2))
 // Left plane   :  P=(0, 0, 0),     N=(cos(fov/2), 0, sin(fov/2))
 // Right plane  :  P=(0, 0, 0),     N=(-cos(fov/2), 0, sin(fov/2))
@@ -30,29 +30,31 @@ Plane frustumPlanes[NUM_FRUSTUM_PLANES];
 //           \|/
 //
 ///////////////////////////////////////////////////////////////////////////////
-void initFrustumPlanes(float fov, float zNear, float zFar) {
-    float cosHalfFov = cos(fov / 2);
-    float sinHalfFov = sin(fov / 2);
+void initFrustumPlanes(float fovX, float fovY, float zNear, float zFar) {
+    float cosHalfFovX = cos(fovX / 2);
+    float sinHalfFovX = sin(fovX / 2);
+    float cosHalfFovY = cos(fovY / 2);
+    float sinHalfFovY = sin(fovY / 2);
 
     frustumPlanes[LEFT_FRUSTUM_PLANE].point = vec3_new(0, 0, 0);
-    frustumPlanes[LEFT_FRUSTUM_PLANE].normal.x = cosHalfFov;
+    frustumPlanes[LEFT_FRUSTUM_PLANE].normal.x = cosHalfFovX;
     frustumPlanes[LEFT_FRUSTUM_PLANE].normal.y = 0;
-    frustumPlanes[LEFT_FRUSTUM_PLANE].normal.z = sinHalfFov;
+    frustumPlanes[LEFT_FRUSTUM_PLANE].normal.z = sinHalfFovX;
 
     frustumPlanes[RIGHT_FRUSTUM_PLANE].point = vec3_new(0, 0, 0);
-    frustumPlanes[RIGHT_FRUSTUM_PLANE].normal.x = -cosHalfFov;
+    frustumPlanes[RIGHT_FRUSTUM_PLANE].normal.x = -cosHalfFovX;
     frustumPlanes[RIGHT_FRUSTUM_PLANE].normal.y = 0;
-    frustumPlanes[RIGHT_FRUSTUM_PLANE].normal.z = sinHalfFov;
+    frustumPlanes[RIGHT_FRUSTUM_PLANE].normal.z = sinHalfFovX;
 
     frustumPlanes[TOP_FRUSTUM_PLANE].point = vec3_new(0, 0, 0);
     frustumPlanes[TOP_FRUSTUM_PLANE].normal.x = 0;
-    frustumPlanes[TOP_FRUSTUM_PLANE].normal.y = -cosHalfFov;
-    frustumPlanes[TOP_FRUSTUM_PLANE].normal.z = sinHalfFov;
+    frustumPlanes[TOP_FRUSTUM_PLANE].normal.y = -cosHalfFovY;
+    frustumPlanes[TOP_FRUSTUM_PLANE].normal.z = sinHalfFovY;
 
     frustumPlanes[BOTTOM_FRUSTUM_PLANE].point = vec3_new(0, 0, 0);
     frustumPlanes[BOTTOM_FRUSTUM_PLANE].normal.x = 0;
-    frustumPlanes[BOTTOM_FRUSTUM_PLANE].normal.y = cosHalfFov;
-    frustumPlanes[BOTTOM_FRUSTUM_PLANE].normal.z = sinHalfFov;
+    frustumPlanes[BOTTOM_FRUSTUM_PLANE].normal.y = cosHalfFovY;
+    frustumPlanes[BOTTOM_FRUSTUM_PLANE].normal.z = sinHalfFovY;
 
     frustumPlanes[NEAR_FRUSTUM_PLANE].point = vec3_new(0, 0, zNear);
     frustumPlanes[NEAR_FRUSTUM_PLANE].normal.x = 0;
