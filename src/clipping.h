@@ -6,8 +6,11 @@
 #define SDL2_SOFTWARE_RENDERER_CLIPPING_H
 
 #include "vector.h"
+#include "triangle.h"
 
 #define MAX_NUM_POLY_VERTICES 10
+#define MAX_NUM_POLY_TRIANGLES 10
+
 typedef enum {
     LEFT_FRUSTUM_PLANE,
     RIGHT_FRUSTUM_PLANE,
@@ -34,6 +37,6 @@ Polygon createPolygonFromTriangle(Vec3 vec1, Vec3 vec2, Vec3 vec3);
 
 void clipPolygon(Polygon *polygon);
 
-
+void createTrianglesFromPolygon(Polygon *polygon, Triangle triangles[], int *numTriangles);
 
 #endif //SDL2_SOFTWARE_RENDERER_CLIPPING_H

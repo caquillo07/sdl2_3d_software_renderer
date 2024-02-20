@@ -178,7 +178,6 @@ void update(void) {
     Mat4 viewMatrix = mat4_lookAt(camera.position, target, upDuration);
 
     for (int i = 0; i < array_length(mesh.faces); i++) {
-        if (i != 4) { continue; }
         const Face meshFace = mesh.faces[i];
         const Vec3 faceVertices[] = {
             mesh.vertices[meshFace.a],
@@ -239,51 +238,62 @@ void update(void) {
         );
 
         clipPolygon(&polygon);
-        printf("Num vertices after clipping: %d\n", polygon.numVertices);
 
-        // loop all three vertices to perform projection
-        Vec4 projectedPoints[3];
-        for (int j = 0; j < 3; j++) {
-            projectedPoints[j] = mat4_mulVec4Project(projectionMatrix, transformedVertices[j]);
+        // break the polygon into triangles
+        Triangle trianglesAfterClipping[MAX_NUM_POLY_TRIANGLES];
+        int numTrianglesAfterClipping = 0;
+
+        // trianglesAfterClipping gets passed by reference here in C
+        createTrianglesFromPolygon(&polygon, trianglesAfterClipping, &numTrianglesAfterClipping);
+
+        // loop all the triangles after clipping
+        for (int t = 0; t < numTrianglesAfterClipping; t++) {
+            Triangle clippedTriangle = trianglesAfterClipping[t];
+
+            // loop all three vertices to perform projection
+            Vec4 projectedPoints[3];
+            for (int j = 0; j < 3; j++) {
+                projectedPoints[j] = mat4_mulVec4Project(projectionMatrix, clippedTriangle.points[j]);
 
 
-            // in screen space, invert Y values to account for flipped screen coordinates
-            projectedPoints[j].y *= -1;
+                // in screen space, invert Y values to account for flipped screen coordinates
+                projectedPoints[j].y *= -1;
 
-            // Scale into the viewport (has to go first)
-            projectedPoints[j].x *= (float) windowWidth / 2.0f;
-            projectedPoints[j].y *= (float) windowHeight / 2.0f;
+                // Scale into the viewport (has to go first)
+                projectedPoints[j].x *= (float) windowWidth / 2.0f;
+                projectedPoints[j].y *= (float) windowHeight / 2.0f;
 
-            // translate the projected points to the middle of the screen
-            projectedPoints[j].x += (float) windowWidth / 2.0f;
-            projectedPoints[j].y += (float) windowHeight / 2.0f;
-        }
+                // translate the projected points to the middle of the screen
+                projectedPoints[j].x += (float) windowWidth / 2.0f;
+                projectedPoints[j].y += (float) windowHeight / 2.0f;
+            }
 
-        // Calculate the shade of the triangle based on the direction of the light
-        // and the normal of the face.
-        // we need the inverse of the normal to calculate the light intensity because
-        // our Z grows towards the screen, not from the screen.
-        float lightIntensityFactor = -1 * vec3_dot(normal, light.direction);
 
-        uint32_t triangleColor = lightApplyIntensity(meshFace.color, lightIntensityFactor);
+            // Calculate the shade of the triangle based on the direction of the light
+            // and the normal of the face.
+            // we need the inverse of the normal to calculate the light intensity because
+            // our Z grows towards the screen, not from the screen.
+            float lightIntensityFactor = -1 * vec3_dot(normal, light.direction);
 
-        Triangle projectedTriangle = {
-            .points = {
-                {projectedPoints[0].x, projectedPoints[0].y, projectedPoints[0].z, projectedPoints[0].w},
-                {projectedPoints[1].x, projectedPoints[1].y, projectedPoints[1].z, projectedPoints[1].w},
-                {projectedPoints[2].x, projectedPoints[2].y, projectedPoints[2].z, projectedPoints[2].w},
-            },
-            .textCoords = {
-                {meshFace.vertexA_UV.u, meshFace.vertexA_UV.v},
-                {meshFace.vertexB_UV.u, meshFace.vertexB_UV.v},
-                {meshFace.vertexC_UV.u, meshFace.vertexC_UV.v},
-            },
-            .color = triangleColor,
-        };
+            uint32_t triangleColor = lightApplyIntensity(meshFace.color, lightIntensityFactor);
 
-        if (numTrianglesToRender < MAX_TRIANGLES) {
-            trianglesToRender[numTrianglesToRender] = projectedTriangle;
-            numTrianglesToRender++;
+            Triangle triangleToRender = {
+                .points = {
+                    {projectedPoints[0].x, projectedPoints[0].y, projectedPoints[0].z, projectedPoints[0].w},
+                    {projectedPoints[1].x, projectedPoints[1].y, projectedPoints[1].z, projectedPoints[1].w},
+                    {projectedPoints[2].x, projectedPoints[2].y, projectedPoints[2].z, projectedPoints[2].w},
+                },
+                .textCoords = {
+                    {meshFace.vertexA_UV.u, meshFace.vertexA_UV.v},
+                    {meshFace.vertexB_UV.u, meshFace.vertexB_UV.v},
+                    {meshFace.vertexC_UV.u, meshFace.vertexC_UV.v},
+                },
+                .color = triangleColor,
+            };
+            if (numTrianglesToRender < MAX_TRIANGLES) {
+                trianglesToRender[numTrianglesToRender] = triangleToRender;
+                numTrianglesToRender++;
+            }
         }
     }
 }
