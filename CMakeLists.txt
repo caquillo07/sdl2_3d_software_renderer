@@ -31,6 +31,8 @@ add_executable(sdl2_software_renderer
         src/swap.h
         src/upng.c
         src/upng.h
+        src/clipping.c
+        src/clipping.h
 )
 target_link_libraries(sdl2_software_renderer ${SDL2_LIBRARIES})
 

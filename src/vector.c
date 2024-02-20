@@ -142,3 +142,18 @@ Vec2 vec2_fromVec4(Vec4 v) {
     Vec2 result = { v.x, v.y };
     return result;
 }
+
+Vec2 vec2_new(float x, float y) {
+    Vec2 result = { x, y };
+    return result;
+}
+
+Vec3 vec3_new(float x, float y, float z) {
+    Vec3 result = { x, y, z };
+    return result;
+}
+
+Vec3 vec3_clone(Vec3 *v) {
+    Vec3 result = { v->x, v->y, v->z };
+    return result;
+}

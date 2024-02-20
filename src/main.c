@@ -10,6 +10,7 @@
 #include "vector.h"
 #include "texture.h"
 #include "camera.h"
+#include "clipping.h"
 
 #define MAX_TRIANGLES 10000
 Triangle trianglesToRender[MAX_TRIANGLES];
@@ -39,17 +40,21 @@ void setup(void) {
         windowHeight
     );
 
+    // capture the mouse
+//    SDL_SetRelativeMouseMode(SDL_TRUE);
+
     // init perspective projection matrix
     const float fov = M_PI / 3.0f;  // the same as 180/3, or 60 degrees
-    projectionMatrix = mat4_makePerspective(
-        fov,
-        (float) windowHeight / (float) windowWidth,
-        0.1f,
-        100.0f
-    );
+    const float aspect = (float) windowHeight / (float) windowWidth;
+    const float zNear = 0.1f;
+    const float zFar = 100.0f;
+    projectionMatrix = mat4_makePerspective(fov, aspect, zNear, zFar);
 
-    loadOBJFileData("../assets/drone.obj");
-    loadPNGTextureData("../assets/drone.png");
+    // init the frustum planes
+    initFrustumPlanes(fov, zNear, zFar);
+
+    loadOBJFileData("../assets/cube.obj");
+    loadPNGTextureData("../assets/cube.png");
 }
 
 void processInput(void) {
@@ -59,6 +64,17 @@ void processInput(void) {
     switch (event.type) {
         case SDL_QUIT:
             isRunning = false;
+            break;
+        case SDL_MOUSEMOTION:
+            break;
+            printf("Mouse moved to (%d, %d) - (%d, %d)\n", event.motion.x, event.motion.y, event.motion.xrel,
+                   event.motion.yrel);
+            if (event.motion.xrel != 0) {
+                camera.yawAngle += event.motion.xrel * 0.05f * deltaTime;
+            }
+            if (event.motion.yrel != 0) {
+                camera.pitchAngle += event.motion.yrel * 0.05f * deltaTime;
+            }
             break;
         case SDL_KEYDOWN:
             if (event.key.keysym.sym == SDLK_ESCAPE) {
@@ -99,18 +115,18 @@ void processInput(void) {
             }
 
             if (event.key.keysym.sym == SDLK_w) {
-                camera.forwardVelocity = vec3_mul(camera.direction, 15.0f * deltaTime);
+                camera.forwardVelocity = vec3_mul(camera.direction, 5.0f * deltaTime);
                 camera.position = vec3_add(camera.position, camera.forwardVelocity);
             }
             if (event.key.keysym.sym == SDLK_s) {
-                camera.forwardVelocity = vec3_mul(camera.direction, 15.0f * deltaTime);
+                camera.forwardVelocity = vec3_mul(camera.direction, 5.0f * deltaTime);
                 camera.position = vec3_sub(camera.position, camera.forwardVelocity);
             }
             if (event.key.keysym.sym == SDLK_a) {
-                camera.yawAngle += 1.0f * deltaTime;
+                camera.yawAngle -= 1.0f * deltaTime;
             }
             if (event.key.keysym.sym == SDLK_d) {
-                camera.yawAngle -= 1.0f * deltaTime;
+                camera.yawAngle += 1.0f * deltaTime;
             }
             break;
         default:
@@ -127,8 +143,8 @@ void update(void) {
     deltaTime = (SDL_GetTicks() - previousFrameTime) / 1000.0f;
 
     // calculate the fps
-    const float fps = 1.0f / deltaTime;
-    printf("FPS: %f\n", fps);
+//    const float fps = 1.0f / deltaTime;
+//    printf("FPS: %f\n", fps);
 
     previousFrameTime = SDL_GetTicks();
 
@@ -152,7 +168,9 @@ void update(void) {
     Vec3 upDuration = {0, 1, 0};
     Vec3 target = {0, 0, 1};
     Mat4 cameraYawRotation = mat4_makeRotationY(camera.yawAngle);
-    camera.direction = vec3_fromVec4(mat4_mulVec4(cameraYawRotation, vec4_fromVec3(target)));
+    Mat4 cameraPitchRotation = mat4_makeRotationX(camera.pitchAngle);
+    camera.direction = vec3_fromVec4(mat4_mulVec4(cameraPitchRotation, vec4_fromVec3(target)));
+    camera.direction = vec3_fromVec4(mat4_mulVec4(cameraYawRotation, vec4_fromVec3(camera.direction)));
 
     // offset the camera position in the direction where the camera is pointing at
     target = vec3_add(camera.position, camera.direction);
@@ -160,6 +178,7 @@ void update(void) {
     Mat4 viewMatrix = mat4_lookAt(camera.position, target, upDuration);
 
     for (int i = 0; i < array_length(mesh.faces); i++) {
+        if (i != 4) { continue; }
         const Face meshFace = mesh.faces[i];
         const Vec3 faceVertices[] = {
             mesh.vertices[meshFace.a],
@@ -211,16 +230,29 @@ void update(void) {
             }
         }
 
+        // Clipping
+        // clip the triangle against the near plane
+        Polygon polygon = createPolygonFromTriangle(
+            vec3_fromVec4(transformedVertices[0]),
+            vec3_fromVec4(transformedVertices[1]),
+            vec3_fromVec4(transformedVertices[2])
+        );
+
+        clipPolygon(&polygon);
+        printf("Num vertices after clipping: %d\n", polygon.numVertices);
+
         // loop all three vertices to perform projection
         Vec4 projectedPoints[3];
         for (int j = 0; j < 3; j++) {
             projectedPoints[j] = mat4_mulVec4Project(projectionMatrix, transformedVertices[j]);
-            // Scale into the viewport (has to go first)
-            projectedPoints[j].x *= (float) windowWidth / 2.0f;
-            projectedPoints[j].y *= (float) windowHeight / 2.0f;
+
 
             // in screen space, invert Y values to account for flipped screen coordinates
             projectedPoints[j].y *= -1;
+
+            // Scale into the viewport (has to go first)
+            projectedPoints[j].x *= (float) windowWidth / 2.0f;
+            projectedPoints[j].y *= (float) windowHeight / 2.0f;
 
             // translate the projected points to the middle of the screen
             projectedPoints[j].x += (float) windowWidth / 2.0f;

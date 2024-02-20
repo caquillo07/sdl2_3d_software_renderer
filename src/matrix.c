@@ -103,7 +103,6 @@ Mat4 mat4_makeRotationZ(float rz) {
 }
 
 Mat4 mat4_makeWorld(Vec3 position, Vec3 rotation, Vec3 scale) {
-    Mat4 result = mat4_identity();
     Mat4 scaleMatrix = mat4_makeScale(scale.x, scale.y, scale.z);
     Mat4 translationMatrix = mat4_makeTransform(position.x, position.y, position.z);
     Mat4 rotationMatrixX = mat4_makeRotationX(rotation.x);
@@ -112,6 +111,7 @@ Mat4 mat4_makeWorld(Vec3 position, Vec3 rotation, Vec3 scale) {
 
     // world = scale * rotation * translation
     // order matters on this one.
+    Mat4 result = mat4_identity();
     result = mat4_mulMat4(scaleMatrix, result);
     result = mat4_mulMat4(rotationMatrixX, result);
     result = mat4_mulMat4(rotationMatrixY, result);

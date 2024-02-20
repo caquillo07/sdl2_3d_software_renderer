@@ -13,4 +13,5 @@ Camera camera = {
     .direction = {0, 0, 1},
     .forwardVelocity = {0, 0, 0},
     .yawAngle = 0,
+    .pitchAngle = 0,
 };

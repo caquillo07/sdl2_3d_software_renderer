@@ -12,6 +12,7 @@ typedef struct {
     Vec3 direction;
     Vec3 forwardVelocity;
     float yawAngle;
+    float pitchAngle;
 } Camera;
 
 extern Camera camera;
