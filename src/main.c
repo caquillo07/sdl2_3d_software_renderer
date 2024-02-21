@@ -26,26 +26,15 @@ bool isPaused = false;
 
 void setup(void) {
     // Allocate the required memory in bytes to hold the color buffer
-    renderMethod = RENDER_TEXTURED;
-    cullMethod = CULL_BACKFACE;
-    colorBuffer = (uint32_t *) malloc(sizeof(uint32_t) * windowWidth * windowHeight);
-    zBuffer = (float *) malloc(sizeof(float) * windowWidth * windowHeight);
-
-    // // Creating a SDL texture that is used to display the color buffer
-    colorBufferTexture = SDL_CreateTexture(
-        renderer,
-        SDL_PIXELFORMAT_RGBA32,
-        SDL_TEXTUREACCESS_STREAMING,
-        windowWidth,
-        windowHeight
-    );
+    setRenderMethod(RENDER_TEXTURED);
+    setCullMethod(CULL_BACKFACE);
 
     // capture the mouse
-//    SDL_SetRelativeMouseMode(SDL_TRUE);
+    // SDL_SetRelativeMouseMode(SDL_TRUE);
 
     // init perspective projection matrix
-    const float aspectX = (float) windowWidth / (float) windowHeight;
-    const float aspectY = (float) windowHeight / (float) windowWidth;
+    const float aspectX = (float) getWindowWidth() / (float) getWindowHeight();
+    const float aspectY = (float) getWindowHeight() / (float) getWindowWidth();
     const float fovY = M_PI / 3.0f;  // the same as 180/3, or 60 degrees
     const float fovX = 2.0f * atanf(tanf(fovY / 2.0f) * aspectX);
     const float zNear = 1.f;
@@ -61,78 +50,96 @@ void setup(void) {
 
 void processInput(void) {
     SDL_Event event;
-    SDL_PollEvent(&event);
-
-    switch (event.type) {
-        case SDL_QUIT:
-            isRunning = false;
-            break;
-        case SDL_MOUSEMOTION:
-            break;
-            printf("Mouse moved to (%d, %d) - (%d, %d)\n", event.motion.x, event.motion.y, event.motion.xrel,
-                   event.motion.yrel);
-            if (event.motion.xrel != 0) {
-                camera.yawAngle += event.motion.xrel * 0.05f * deltaTime;
-            }
-            if (event.motion.yrel != 0) {
-                camera.pitchAngle += event.motion.yrel * 0.05f * deltaTime;
-            }
-            break;
-        case SDL_KEYDOWN:
-            if (event.key.keysym.sym == SDLK_ESCAPE) {
+    while (SDL_PollEvent(&event)) {
+        switch (event.type) {
+            case SDL_QUIT:
                 isRunning = false;
-            }
-            if (event.key.keysym.sym == SDLK_1) {
-                renderMethod = RENDER_WIRE_VERTEX;
-            }
-            if (event.key.keysym.sym == SDLK_2) {
-                renderMethod = RENDER_WIRE;
-            }
-            if (event.key.keysym.sym == SDLK_3) {
-                renderMethod = RENDER_FILL_TRIANGLE;
-            }
-            if (event.key.keysym.sym == SDLK_4) {
-                renderMethod = RENDER_FILL_TRIANGLE_WIRE;
-            }
-            if (event.key.keysym.sym == SDLK_5) {
-                renderMethod = RENDER_TEXTURED;
-            }
-            if (event.key.keysym.sym == SDLK_6) {
-                renderMethod = RENDER_TEXTURED_WIRE;
-            }
-            if (event.key.keysym.sym == SDLK_c) {
-                cullMethod = CULL_BACKFACE;
-            }
-            if (event.key.keysym.sym == SDLK_x) {
-                cullMethod = CULL_NONE;
-            }
-            if (event.key.keysym.sym == SDLK_SPACE) {
-                isPaused = !isPaused;
-            }
-            if (event.key.keysym.sym == SDLK_UP) {
-                camera.position.y += 3.0f * deltaTime;
-            }
-            if (event.key.keysym.sym == SDLK_DOWN) {
-                camera.position.y -= 3.0f * deltaTime;
-            }
+                break;
+            case SDL_MOUSEMOTION:
+                break;
+                printf(
+                    "Mouse moved to (%d, %d) - (%d, %d)\n", event.motion.x, event.motion.y, event.motion.xrel,
+                    event.motion.yrel
+                );
+                if (event.motion.xrel != 0) {
+                    camera.yawAngle += event.motion.xrel * 0.05f * deltaTime;
+                }
+                if (event.motion.yrel != 0) {
+                    camera.pitchAngle += event.motion.yrel * 0.05f * deltaTime;
+                }
+                break;
+            case SDL_KEYDOWN:
+                if (event.key.keysym.sym == SDLK_ESCAPE) {
+                    isRunning = false;
+                    return;
+                }
+                if (event.key.keysym.sym == SDLK_1) {
+                    setRenderMethod(RENDER_WIRE_VERTEX);
+                    return;
+                }
+                if (event.key.keysym.sym == SDLK_2) {
+                    setRenderMethod(RENDER_WIRE);
+                    return;
+                }
+                if (event.key.keysym.sym == SDLK_3) {
+                    setRenderMethod(RENDER_FILL_TRIANGLE);
+                    return;
+                }
+                if (event.key.keysym.sym == SDLK_4) {
+                    setRenderMethod(RENDER_FILL_TRIANGLE_WIRE);
+                    return;
+                }
+                if (event.key.keysym.sym == SDLK_5) {
+                    setRenderMethod(RENDER_TEXTURED);
+                    return;
+                }
+                if (event.key.keysym.sym == SDLK_6) {
+                    setRenderMethod(RENDER_TEXTURED_WIRE);
+                    return;
+                }
+                if (event.key.keysym.sym == SDLK_c) {
+                    setCullMethod(CULL_BACKFACE);
+                    return;
+                }
+                if (event.key.keysym.sym == SDLK_x) {
+                    setCullMethod(CULL_NONE);
+                    return;
+                }
+                if (event.key.keysym.sym == SDLK_SPACE) {
+                    isPaused = !isPaused;
+                    return;
+                }
+                if (event.key.keysym.sym == SDLK_UP) {
+                    camera.position.y += 3.0f * deltaTime;
+                    return;
+                }
+                if (event.key.keysym.sym == SDLK_DOWN) {
+                    camera.position.y -= 3.0f * deltaTime;
+                    return;
+                }
 
-            if (event.key.keysym.sym == SDLK_w) {
-                camera.forwardVelocity = vec3_mul(camera.direction, 5.0f * deltaTime);
-                camera.position = vec3_add(camera.position, camera.forwardVelocity);
-            }
-            if (event.key.keysym.sym == SDLK_s) {
-                camera.forwardVelocity = vec3_mul(camera.direction, 5.0f * deltaTime);
-                camera.position = vec3_sub(camera.position, camera.forwardVelocity);
-            }
-            if (event.key.keysym.sym == SDLK_a) {
-                camera.yawAngle -= 1.0f * deltaTime;
-            }
-            if (event.key.keysym.sym == SDLK_d) {
-                camera.yawAngle += 1.0f * deltaTime;
-            }
-            break;
-        default:
-            break;
+                if (event.key.keysym.sym == SDLK_w) {
+                    camera.forwardVelocity = vec3_mul(camera.direction, 5.0f * deltaTime);
+                    camera.position = vec3_add(camera.position, camera.forwardVelocity);
+                    return;
+                }
+                if (event.key.keysym.sym == SDLK_s) {
+                    camera.forwardVelocity = vec3_mul(camera.direction, 5.0f * deltaTime);
+                    camera.position = vec3_sub(camera.position, camera.forwardVelocity);
+                    return;
+                }
+                if (event.key.keysym.sym == SDLK_a) {
+                    camera.yawAngle -= 1.0f * deltaTime;
+                    return;
+                }
+                if (event.key.keysym.sym == SDLK_d) {
+                    camera.yawAngle += 1.0f * deltaTime;
+                    return;
+                }
+                break;
+            default:
+                break;
+        }
     }
 }
 
@@ -223,7 +230,7 @@ void update(void) {
         // find the vector between a point in the triangle and the camera origin
         const Vec3 cameraRay = vec3_sub(origin, vectorA);
 
-        if (cullMethod == CULL_BACKFACE) {
+        if (getCullMethod() == CULL_BACKFACE) {
             // check if this triangle is aligned with the screen
             // bypass the triangles that are looking away from the camera
             if (vec3_dot(normal, cameraRay) < 0) {
@@ -265,12 +272,12 @@ void update(void) {
                 projectedPoints[j].y *= -1;
 
                 // Scale into the viewport (has to go first)
-                projectedPoints[j].x *= (float) windowWidth / 2.0f;
-                projectedPoints[j].y *= (float) windowHeight / 2.0f;
+                projectedPoints[j].x *= (float) getWindowWidth() / 2.0f;
+                projectedPoints[j].y *= (float) getWindowHeight() / 2.0f;
 
                 // translate the projected points to the middle of the screen
-                projectedPoints[j].x += (float) windowWidth / 2.0f;
-                projectedPoints[j].y += (float) windowHeight / 2.0f;
+                projectedPoints[j].x += (float) getWindowWidth() / 2.0f;
+                projectedPoints[j].y += (float) getWindowHeight() / 2.0f;
             }
 
 
@@ -304,6 +311,8 @@ void update(void) {
 }
 
 void render(void) {
+    clearColorBuffer(0xFF000000);
+    clearZBuffer();
     drawGrid();
 
     // Loop all projected triangles and render them
@@ -311,7 +320,7 @@ void render(void) {
     for (int i = 0; i < numTrianglesToRender; i++) {
         const Triangle triangle = trianglesToRender[i];
 
-        if (renderMethod == RENDER_FILL_TRIANGLE || renderMethod == RENDER_FILL_TRIANGLE_WIRE) {
+        if (shouldRenderFilledTriangle()) {
             drawFilledTriangle(
                 triangle.points[0].x, triangle.points[0].y, triangle.points[0].z, triangle.points[0].w, // vertex A
                 triangle.points[1].x, triangle.points[1].y, triangle.points[1].z, triangle.points[1].w, // vertex B
@@ -320,7 +329,7 @@ void render(void) {
             );
         }
 
-        if (renderMethod == RENDER_TEXTURED || renderMethod == RENDER_TEXTURED_WIRE) {
+        if (shouldRenderTexturedTriangle()) {
             drawTexturedTriangle(
                 triangle.points[0].x, triangle.points[0].y, triangle.points[0].z, triangle.points[0].w,
                 triangle.textCoords[0].u, triangle.textCoords[0].v, // vertex A
@@ -332,18 +341,14 @@ void render(void) {
             );
         }
 
-        if (renderMethod == RENDER_WIRE ||
-            renderMethod == RENDER_WIRE_VERTEX ||
-            renderMethod == RENDER_FILL_TRIANGLE_WIRE ||
-            renderMethod == RENDER_TEXTURED_WIRE) {
-
+        if (shouldRenderWireframe()) {
             Vec2 a = vec2_fromVec4(triangle.points[0]);
             Vec2 b = vec2_fromVec4(triangle.points[1]);
             Vec2 c = vec2_fromVec4(triangle.points[2]);
             drawTriangle(a, b, c, 0xFFFFFFF);
         }
 
-        if (renderMethod == RENDER_WIRE_VERTEX) {
+        if (shouldRenderWireVertex()) {
             const uint32_t dotColor = 0xFFFF0000;
             drawRect(
                 (int) triangle.points[0].x - 3,
@@ -370,16 +375,10 @@ void render(void) {
     }
 
     renderColorBuffer();
-    clearColorBuffer(0xFF000000);
-    clearZBuffer();
-
-    SDL_RenderPresent(renderer);
 }
 
 void freeResources(void) {
     freeMesh();
-    free(colorBuffer);
-    free(zBuffer);
     upng_free(pngTexture);
 }
 

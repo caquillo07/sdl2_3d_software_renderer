@@ -144,12 +144,12 @@ void drawTrianglePixel(
     interpolated_reciprocal_w = 1.0 - interpolated_reciprocal_w;
 
     // Only draw the pixel if the depth value is less than the one previously stored in the z-buffer
-    if (interpolated_reciprocal_w < zBuffer[(windowWidth * y) + x]) {
+    if (interpolated_reciprocal_w < getZBufferAt(x, y)) {
         // Draw a pixel at position (x,y) with a solid color
         drawPixel(x, y, color);
 
         // Update the z-buffer value with the 1/w of this current pixel
-        zBuffer[(windowWidth * y) + x] = interpolated_reciprocal_w;
+        updateZBuffer(x, y, interpolated_reciprocal_w);
     }
 }
 
@@ -204,12 +204,11 @@ void drawTexel(
 
     // adjust 1/w so the pixels that are closer to the camera have smaller values
     interpolatedReciprocalW = 1.f - interpolatedReciprocalW;
-    uint32_t zBufferIndex = (windowWidth * y) + x;
-    if (interpolatedReciprocalW < zBuffer[zBufferIndex]) {
+    if (interpolatedReciprocalW < getZBufferAt(x, y)) {
         drawPixel(x, y, texture[texelIndex]);
 
         // update z-buffer with 1/w of this current pixel
-        zBuffer[zBufferIndex] = interpolatedReciprocalW;
+        updateZBuffer(x, y, interpolatedReciprocalW);
     }
 }
 

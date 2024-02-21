@@ -1,12 +1,17 @@
 #include "display.h"
 
-SDL_Window *window = NULL;
-SDL_Renderer *renderer = NULL;
-uint32_t *colorBuffer = NULL;
-float *zBuffer = NULL;
-SDL_Texture *colorBufferTexture = NULL;
-int windowWidth = 800;
-int windowHeight = 600;
+static SDL_Window *window = NULL;
+static SDL_Renderer *renderer = NULL;
+
+static uint32_t *colorBuffer = NULL;
+static float *zBuffer = NULL;
+
+static SDL_Texture *colorBufferTexture = NULL;
+static int windowWidth = 800;
+static int windowHeight = 600;
+
+static enum CullMethod cullMethod = CULL_BACKFACE;
+static enum RenderMethod renderMethod = RENDER_TEXTURED;
 
 bool initializeWindow(void) {
     if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
@@ -41,6 +46,19 @@ bool initializeWindow(void) {
         return false;
     }
 
+    // Allocate the required memory in bytes to hold the color buffer
+    colorBuffer = (uint32_t *) malloc(sizeof(uint32_t) * windowWidth * windowHeight);
+    zBuffer = (float *) malloc(sizeof(float) * windowWidth * windowHeight);
+
+    // // Creating a SDL texture that is used to display the color buffer
+    colorBufferTexture = SDL_CreateTexture(
+        renderer,
+        SDL_PIXELFORMAT_RGBA32,
+        SDL_TEXTUREACCESS_STREAMING,
+        windowWidth,
+        windowHeight
+    );
+
     return true;
 }
 
@@ -63,9 +81,15 @@ void drawRect(const int x, const int y, const int width, const int height, const
 }
 
 void drawPixel(const int x, const int y, const uint32_t color) {
-    if (x >= 0 && x < windowWidth && y < windowHeight && y >= 0) {
-        colorBuffer[(windowWidth * y) + x] = color;
+    if (x < 0 || x >= windowWidth || y >= windowHeight || y < 0) {
+        return;
     }
+
+    if (colorBuffer == NULL) {
+        fprintf(stderr, "colorBuffer is not initialized.\n");
+        return;
+    }
+    colorBuffer[(windowWidth * y) + x] = color;
 }
 
 void drawLine(const int x0, const int y0, const int x1, const int y1, const uint32_t color) {
@@ -104,22 +128,25 @@ void renderColorBuffer(void) {
         windowWidth * sizeof(uint32_t)
     );
     SDL_RenderCopy(renderer, colorBufferTexture, NULL, NULL);
+    SDL_RenderPresent(renderer);
 }
 
 void clearColorBuffer(const uint32_t color) {
-    for (int y = 0; y < windowHeight; y++) {
-        for (int x = 0; x < windowWidth; x++) {
-            colorBuffer[(windowWidth * y) + x] = color;
-        }
+    if (colorBuffer == NULL) {
+        return;
+    }
+    for (int i = 0; i < windowHeight * windowWidth; i++) {
+        colorBuffer[i] = color;
     }
 }
 
 void clearZBuffer(void) {
-    for (int y = 0; y < windowHeight; y++) {
-        for (int x = 0; x < windowWidth; x++) {
-            // we have a left-handed coordinate system, so the zBuffer is filled with 1s
-            zBuffer[(windowWidth * y) + x] = 1.f; // 1 is the farthest point in the zBuffer
-        }
+    if (zBuffer == NULL) {
+        return;
+    }
+    for (int i = 0; i < windowHeight * windowWidth; i++) {
+        // we have a left-handed coordinate system, so the zBuffer is filled with 1s
+        zBuffer[i] = 1.f; // 1 is the farthest point in the zBuffer
     }
 }
 
@@ -127,4 +154,67 @@ void destroyWindow(void) {
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();
+
+    free(colorBuffer);
+    free(zBuffer);
+    SDL_DestroyTexture(colorBufferTexture);
+}
+
+int getWindowHeight(void) {
+    return windowHeight;
+}
+
+int getWindowWidth(void) {
+    return windowWidth;
+}
+
+void setCullMethod(enum CullMethod method) {
+    cullMethod = method;
+}
+
+void setRenderMethod(enum RenderMethod method) {
+    renderMethod = method;
+}
+
+enum RenderMethod getRenderMethod(void) {
+    return renderMethod;
+}
+
+enum CullMethod getCullMethod(void) {
+    return cullMethod;
+}
+
+bool shouldRenderFilledTriangle(void) {
+    return renderMethod == RENDER_FILL_TRIANGLE ||
+           renderMethod == RENDER_FILL_TRIANGLE_WIRE;
+}
+
+bool shouldRenderTexturedTriangle(void) {
+    return renderMethod == RENDER_TEXTURED ||
+           renderMethod == RENDER_TEXTURED_WIRE;
+}
+
+bool shouldRenderWireframe(void) {
+    return renderMethod == RENDER_WIRE ||
+           renderMethod == RENDER_WIRE_VERTEX ||
+           renderMethod == RENDER_FILL_TRIANGLE_WIRE ||
+           renderMethod == RENDER_TEXTURED_WIRE;
+}
+
+bool shouldRenderWireVertex(void) {
+    return renderMethod == RENDER_WIRE_VERTEX;
+}
+
+float getZBufferAt(int x, int y) {
+    if (x < 0 || x >= windowWidth || y >= windowHeight || y < 0) {
+        return 1.f;
+    }
+    return zBuffer[(windowWidth * y) + x];
+}
+
+void updateZBuffer(int x, int y, float value) {
+    if (x < 0 || x >= windowWidth || y >= windowHeight || y < 0) {
+        return;
+    }
+    zBuffer[(windowWidth * y) + x] = value;
 }
