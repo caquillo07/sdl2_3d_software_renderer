@@ -15,6 +15,22 @@ typedef struct {
     float pitchAngle;
 } Camera;
 
-extern Camera camera;
+void initCamera(Vec3 position, Vec3 direction);
+
+Vec3 getCameraPosition(void);
+Vec3 getCameraDirection(void);
+Vec3 getCameraForwardVelocity(void);
+float getCameraYaw(void);
+float getCameraPitch(void);
+
+void updateCameraPosition(Vec3 position);
+void updateCameraDirection(Vec3 direction);
+void updateCameraForwardVelocity(Vec3 forwardVelocity);
+
+void rotateCameraYaw(float angle);
+void rotateCameraPitch(float angle);
+
+Vec3 getCameraLookAtTarget(void);
+
 
 #endif //CAMERA_H

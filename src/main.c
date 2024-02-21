@@ -57,17 +57,17 @@ void processInput(void) {
                 break;
             case SDL_MOUSEMOTION:
                 break;
-                printf(
-                    "Mouse moved to (%d, %d) - (%d, %d)\n", event.motion.x, event.motion.y, event.motion.xrel,
-                    event.motion.yrel
-                );
-                if (event.motion.xrel != 0) {
-                    camera.yawAngle += event.motion.xrel * 0.05f * deltaTime;
-                }
-                if (event.motion.yrel != 0) {
-                    camera.pitchAngle += event.motion.yrel * 0.05f * deltaTime;
-                }
-                break;
+//                printf(
+//                    "Mouse moved to (%d, %d) - (%d, %d)\n", event.motion.x, event.motion.y, event.motion.xrel,
+//                    event.motion.yrel
+//                );
+//                if (event.motion.xrel != 0) {
+//                    camera.yawAngle += event.motion.xrel * 0.05f * deltaTime;
+//                }
+//                if (event.motion.yrel != 0) {
+//                    camera.pitchAngle += event.motion.yrel * 0.05f * deltaTime;
+//                }
+//                break;
             case SDL_KEYDOWN:
                 if (event.key.keysym.sym == SDLK_ESCAPE) {
                     isRunning = false;
@@ -110,30 +110,38 @@ void processInput(void) {
                     return;
                 }
                 if (event.key.keysym.sym == SDLK_UP) {
-                    camera.position.y += 3.0f * deltaTime;
-                    return;
+                    updateCameraForwardVelocity(vec3_mul(getCameraDirection(), 5.0 * deltaTime));
+                    updateCameraPosition(vec3_add(getCameraPosition(), getCameraForwardVelocity()));
+                    break;
                 }
                 if (event.key.keysym.sym == SDLK_DOWN) {
-                    camera.position.y -= 3.0f * deltaTime;
+                    updateCameraForwardVelocity(vec3_mul(getCameraDirection(), 5.0 * deltaTime));
+                    updateCameraPosition(vec3_sub(getCameraPosition(), getCameraForwardVelocity()));
+                    break;
+                }
+                if (event.key.keysym.sym == SDLK_RIGHT) {
+                    rotateCameraYaw(-3.0f * deltaTime);
+                    return;
+                }
+                if (event.key.keysym.sym == SDLK_LEFT) {
+                    rotateCameraYaw(3.0f * deltaTime);
                     return;
                 }
 
                 if (event.key.keysym.sym == SDLK_w) {
-                    camera.forwardVelocity = vec3_mul(camera.direction, 5.0f * deltaTime);
-                    camera.position = vec3_add(camera.position, camera.forwardVelocity);
+                    rotateCameraPitch(3.0f * deltaTime);
                     return;
                 }
                 if (event.key.keysym.sym == SDLK_s) {
-                    camera.forwardVelocity = vec3_mul(camera.direction, 5.0f * deltaTime);
-                    camera.position = vec3_sub(camera.position, camera.forwardVelocity);
+                    rotateCameraPitch(-3.0f * deltaTime);
                     return;
                 }
                 if (event.key.keysym.sym == SDLK_a) {
-                    camera.yawAngle -= 1.0f * deltaTime;
+                    rotateCameraYaw(-3.0f * deltaTime);
                     return;
                 }
                 if (event.key.keysym.sym == SDLK_d) {
-                    camera.yawAngle += 1.0f * deltaTime;
+                    rotateCameraYaw(3.0f * deltaTime);
                     return;
                 }
                 break;
@@ -175,16 +183,8 @@ void update(void) {
 
     // create the view matrix
     Vec3 upDuration = {0, 1, 0};
-    Vec3 target = {0, 0, 1};
-    Mat4 cameraYawRotation = mat4_makeRotationY(camera.yawAngle);
-    Mat4 cameraPitchRotation = mat4_makeRotationX(camera.pitchAngle);
-    camera.direction = vec3_fromVec4(mat4_mulVec4(cameraPitchRotation, vec4_fromVec3(target)));
-    camera.direction = vec3_fromVec4(mat4_mulVec4(cameraYawRotation, vec4_fromVec3(camera.direction)));
-
-    // offset the camera position in the direction where the camera is pointing at
-    target = vec3_add(camera.position, camera.direction);
-
-    Mat4 viewMatrix = mat4_lookAt(camera.position, target, upDuration);
+    Vec3 target = getCameraLookAtTarget();
+    Mat4 viewMatrix = mat4_lookAt(getCameraPosition(), target, upDuration);
 
     for (int i = 0; i < array_length(mesh.faces); i++) {
         const Face meshFace = mesh.faces[i];
