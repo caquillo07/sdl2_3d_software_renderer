@@ -236,7 +236,10 @@ void update(void) {
         Polygon polygon = createPolygonFromTriangle(
             vec3_fromVec4(transformedVertices[0]),
             vec3_fromVec4(transformedVertices[1]),
-            vec3_fromVec4(transformedVertices[2])
+            vec3_fromVec4(transformedVertices[2]),
+            meshFace.vertexA_UV,
+            meshFace.vertexB_UV,
+            meshFace.vertexC_UV
         );
 
         clipPolygon(&polygon);
@@ -286,9 +289,9 @@ void update(void) {
                     {projectedPoints[2].x, projectedPoints[2].y, projectedPoints[2].z, projectedPoints[2].w},
                 },
                 .textCoords = {
-                    {meshFace.vertexA_UV.u, meshFace.vertexA_UV.v},
-                    {meshFace.vertexB_UV.u, meshFace.vertexB_UV.v},
-                    {meshFace.vertexC_UV.u, meshFace.vertexC_UV.v},
+                    {clippedTriangle.textCoords[0].u, clippedTriangle.textCoords[0].v},
+                    {clippedTriangle.textCoords[1].u, clippedTriangle.textCoords[1].v},
+                    {clippedTriangle.textCoords[2].u, clippedTriangle.textCoords[2].v},
                 },
                 .color = triangleColor,
             };

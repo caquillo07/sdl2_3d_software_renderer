@@ -29,3 +29,11 @@ void loadPNGTextureData(const char *fileName) {
     textureHeight = upng_get_height(pngTexture);
     meshTexture = (uint32_t *) upng_get_buffer(pngTexture);
 }
+
+Texture2 texture2_clone(Texture2 *t) {
+    Texture2 result = {
+            .u = t->u,
+            .v = t->v
+    };
+    return result;
+}

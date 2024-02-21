@@ -28,15 +28,25 @@ typedef struct {
 
 typedef struct {
     Vec3 vertices[MAX_NUM_POLY_VERTICES];
+    Texture2 textCoords[MAX_NUM_POLY_VERTICES];
     int numVertices;
 } Polygon;
 
 void initFrustumPlanes(float fovX, float fovY, float zNear, float zFar);
 
-Polygon createPolygonFromTriangle(Vec3 vec1, Vec3 vec2, Vec3 vec3);
+Polygon createPolygonFromTriangle(
+    Vec3 v0,
+    Vec3 v1,
+    Vec3 v2,
+    const Texture2 t0,
+    const Texture2 t1,
+    const Texture2 t2
+);
 
 void clipPolygon(Polygon *polygon);
 
 void createTrianglesFromPolygon(Polygon *polygon, Triangle triangles[], int *numTriangles);
+
+//void floatLerp(float u, float u1, float t);
 
 #endif //SDL2_SOFTWARE_RENDERER_CLIPPING_H

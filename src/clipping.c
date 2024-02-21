@@ -67,12 +67,24 @@ void initFrustumPlanes(float fovX, float fovY, float zNear, float zFar) {
     frustumPlanes[FAR_FRUSTUM_PLANE].normal.z = -1;
 }
 
-Polygon createPolygonFromTriangle(Vec3 vec1, Vec3 vec2, Vec3 vec3) {
+Polygon createPolygonFromTriangle(
+    Vec3 v0,
+    Vec3 v1,
+    Vec3 v2,
+    const Texture2 t0,
+    const Texture2 t1,
+    const Texture2 t2
+) {
     Polygon result = {
-        .vertices = {vec1, vec2, vec3},
+        .vertices = {v0, v1, v2},
+        .textCoords = {t0, t1, t2},
         .numVertices = 3
     };
     return result;
+}
+
+float floatLerp(float first, float last, float factorT) {
+    return first + (last - first) * factorT;
 }
 
 void clipPolygonAgainstPlane(Polygon *polygon, FrustumPlane plane) {
@@ -80,10 +92,13 @@ void clipPolygonAgainstPlane(Polygon *polygon, FrustumPlane plane) {
     Vec3 planeNormal = frustumPlanes[plane].normal;
 
     Vec3 insideVertices[MAX_NUM_POLY_VERTICES];
+    Texture2 insideTextCoords[MAX_NUM_POLY_VERTICES];
     int numInsideVertices = 0;
 
     Vec3 *currentVertex = &polygon->vertices[0];
     Vec3 *previousVertex = &polygon->vertices[polygon->numVertices - 1];
+    Texture2 *currentTextCoord = &polygon->textCoords[0];
+    Texture2 *previousTextCoord = &polygon->textCoords[polygon->numVertices - 1];
 
     float currentDot = 0;
     float previousDot = vec3_dot(vec3_sub(*previousVertex, planePoint), planeNormal);
@@ -97,29 +112,48 @@ void clipPolygonAgainstPlane(Polygon *polygon, FrustumPlane plane) {
         if (currentDot * previousDot < 0) {
             // if the edge intersects the plane, add the intersection point to the list of inside vertices
             float t = previousDot / (previousDot - currentDot);
-            Vec3 intersectionPoint = vec3_clone(currentVertex);              // I =        Qc
-            intersectionPoint = vec3_sub(intersectionPoint, *previousVertex); // I =       (Qc-Qp)
-            intersectionPoint = vec3_mul(intersectionPoint, t);                // I =      t(Qc-Qp)
-            intersectionPoint = vec3_add(intersectionPoint, *previousVertex); // I = Qp + t(Qc-Qp)
+            // Vec3 intersectionPoint = vec3_clone(currentVertex);              // I =        Qc
+            // intersectionPoint = vec3_sub(intersectionPoint, *previousVertex); // I =       (Qc-Qp)
+            // intersectionPoint = vec3_mul(intersectionPoint, t);                // I =      t(Qc-Qp)
+            // intersectionPoint = vec3_add(intersectionPoint, *previousVertex); // I = Qp + t(Qc-Qp)
+            // this is equivalent to the above 4 lines
+            Vec3 intersectionPoint = {
+                .x = floatLerp(previousVertex->x, currentVertex->x, t),
+                .y = floatLerp(previousVertex->y, currentVertex->y, t),
+                .z = floatLerp(previousVertex->z, currentVertex->z, t)
+            };
+
+            // use lerp to ger the interpolated U and V texture coordinates
+            Texture2 interpolatedTextCoord = {
+                .u = floatLerp(previousTextCoord->u, currentTextCoord->u, t),
+                .v = floatLerp(previousTextCoord->v, currentTextCoord->v, t)
+            };
+
+            insideTextCoords[numInsideVertices] = interpolatedTextCoord;
             insideVertices[numInsideVertices] = intersectionPoint;
             numInsideVertices++;
         }
 
         // if current point is inside the plane
         if (currentDot > 0) {
+            insideTextCoords[numInsideVertices] = texture2_clone(currentTextCoord);
             insideVertices[numInsideVertices] = vec3_clone(currentVertex);
             numInsideVertices++;
         }
 
         previousDot = currentDot;
         previousVertex = currentVertex;
+        previousTextCoord = currentTextCoord;
         currentVertex++;
+        currentTextCoord++;
     }
     for (int i = 0; i < numInsideVertices; i++) {
         polygon->vertices[i] = insideVertices[i];
+        polygon->textCoords[i] = insideTextCoords[i];
     }
     polygon->numVertices = numInsideVertices;
 }
+
 
 void clipPolygon(Polygon *polygon) {
     clipPolygonAgainstPlane(polygon, LEFT_FRUSTUM_PLANE);
@@ -139,6 +173,11 @@ void createTrianglesFromPolygon(Polygon *polygon, Triangle triangles[], int *num
         triangles[i].points[0] = vec4_fromVec3(polygon->vertices[index0]);
         triangles[i].points[1] = vec4_fromVec3(polygon->vertices[index1]);
         triangles[i].points[2] = vec4_fromVec3(polygon->vertices[index2]);
+
+        triangles[i].textCoords[0] = texture2_clone(&polygon->textCoords[index0]);
+        triangles[i].textCoords[1] = texture2_clone(&polygon->textCoords[index1]);
+        triangles[i].textCoords[2] = texture2_clone(&polygon->textCoords[index2]);
+
     }
     // its always numVertices - 2 because we are creating triangles from a polygon
     *numTriangles = polygon->numVertices - 2;

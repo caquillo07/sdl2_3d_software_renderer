@@ -23,4 +23,6 @@ extern const uint8_t REDBRICK_TEXTURE[];
 
 void loadPNGTextureData(const char *fileName);
 
+Texture2 texture2_clone(Texture2 *t);
+
 #endif //SDL2_SOFTWARE_RENDERER_TEXTURE_H
