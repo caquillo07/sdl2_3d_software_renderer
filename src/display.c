@@ -7,11 +7,17 @@ static uint32_t *colorBuffer = NULL;
 static float *zBuffer = NULL;
 
 static SDL_Texture *colorBufferTexture = NULL;
+// if you want to downscale the image for a pixelated look
+//static int windowWidth = 320;
+//static int windowHeight = 200;
+
 static int windowWidth = 800;
 static int windowHeight = 600;
 
 static enum CullMethod cullMethod = CULL_BACKFACE;
 static enum RenderMethod renderMethod = RENDER_TEXTURED;
+
+bool startFullScreen = false;
 
 bool initializeWindow(void) {
     if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
@@ -20,18 +26,21 @@ bool initializeWindow(void) {
     }
 
     // Set width and height of the SDL window with the max screen resolution
-    SDL_DisplayMode displayMode;
-    SDL_GetCurrentDisplayMode(0, &displayMode);
-    windowWidth = displayMode.w;
-    windowHeight = displayMode.h;
-
+    int newWindowWidth = windowWidth;
+    int newWindowHeight = windowHeight;
+    if (startFullScreen) {
+        SDL_DisplayMode displayMode;
+        SDL_GetCurrentDisplayMode(0, &displayMode);
+        newWindowWidth = displayMode.w;
+        newWindowHeight = displayMode.h;
+    }
     // Create a SDL Window
     window = SDL_CreateWindow(
         NULL,
         SDL_WINDOWPOS_CENTERED,
         SDL_WINDOWPOS_CENTERED,
-        windowWidth,
-        windowHeight,
+        newWindowWidth,
+        newWindowHeight,
         SDL_WINDOW_RESIZABLE
     );
     if (!window) {

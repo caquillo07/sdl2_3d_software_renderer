@@ -44,8 +44,8 @@ void setup(void) {
     // init the frustum planes
     initFrustumPlanes(fovX, fovY, zNear, zFar);
 
-    loadOBJFileData("../assets/cube.obj");
-    loadPNGTextureData("../assets/cube.png");
+    loadOBJFileData("../assets/f22.obj");
+    loadPNGTextureData("../assets/f22.png");
 }
 
 void processInput(void) {
